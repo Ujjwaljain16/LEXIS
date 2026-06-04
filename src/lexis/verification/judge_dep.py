@@ -1,0 +1,124 @@
+"""
+WHAT: Check constitutive elements of retrieved chunks against query.
+WHY: A clause about "termination for cause" should only surface for actual cause scenarios.
+HOW: Distinguishes between required and optional elements. Runs on prefiltered chunks before RRF.
+"""
+import json
+import asyncio
+import logging
+from typing import List, Dict, Tuple
+from litellm import acompletion
+from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
+
+class ElementCheckResult(BaseModel):
+    required_satisfied: bool
+    optional_ratio: float
+    passes: bool
+
+ELEMENT_CHECK_PROMPT = """You are a strict legal verification judge.
+Does the query scenario satisfy the constitutive elements of this legal clause?
+
+Query: "{query}"
+
+Required Elements (ALL must be satisfied):
+{required_elements}
+
+Optional Elements (Rate how many are satisfied):
+{optional_elements}
+
+For each element, answer true or false.
+Output ONLY valid JSON:
+{{
+    "required": {{"element_1": true, "element_2": false}},
+    "optional": {{"element_3": true}}
+}}
+"""
+
+async def check_elements(
+    query: str,
+    chunk: Dict,
+    model: str = "gemini/gemini-2.5-flash",
+    optional_threshold: float = 0.5
+) -> ElementCheckResult:
+    """
+    Evaluates if a chunk meets the element criteria.
+    Chunks with no elements automatically pass (insufficient data to reject).
+    """
+    payload = chunk.get("payload", {})
+    required_elements = payload.get("required_elements", [])
+    optional_elements = payload.get("optional_elements", [])
+    
+    # If no elements were extracted at index time, allow the chunk through
+    if not required_elements and not optional_elements:
+        return ElementCheckResult(required_satisfied=True, optional_ratio=1.0, passes=True)
+        
+    req_str = "\n".join(f"- {e}" for e in required_elements) if required_elements else "None"
+    opt_str = "\n".join(f"- {e}" for e in optional_elements) if optional_elements else "None"
+
+    try:
+        response = await acompletion(
+            model=model,
+            messages=[{
+                "role": "user",
+                "content": ELEMENT_CHECK_PROMPT.format(
+                    query=query,
+                    required_elements=req_str,
+                    optional_elements=opt_str
+                )
+            }],
+            temperature=0.0,
+            response_format={"type": "json_object"}
+        )
+        
+        results = json.loads(response.choices[0].message.content.strip())
+        
+        req_results = results.get("required", {})
+        opt_results = results.get("optional", {})
+        
+        # All required must be True
+        req_satisfied = all(req_results.get(f"element_{i+1}", False) for i in range(len(required_elements))) if required_elements else True
+        
+        # Calculate optional ratio
+        opt_count = sum(1 for v in opt_results.values() if v is True)
+        opt_ratio = opt_count / len(optional_elements) if optional_elements else 1.0
+        
+        passes = req_satisfied and (opt_ratio >= optional_threshold)
+        
+        return ElementCheckResult(
+            required_satisfied=req_satisfied,
+            optional_ratio=opt_ratio,
+            passes=passes
+        )
+        
+    except Exception as e:
+        logger.error(f"Element check failed: {e}")
+        # Conservative fallback: don't block the chunk if the judge errors out
+        return ElementCheckResult(required_satisfied=True, optional_ratio=1.0, passes=True)
+
+async def filter_by_elements(
+    query: str,
+    chunks: List[Dict],
+    max_concurrent: int = 8
+) -> List[Dict]:
+    """
+    Filter chunks to only those whose constitutive elements are satisfied by the query.
+    Must run BEFORE RRF to avoid reranking junk.
+    """
+    semaphore = asyncio.Semaphore(max_concurrent)
+
+    async def check_one(chunk):
+        async with semaphore:
+            result = await check_elements(query, chunk)
+            if result.passes:
+                chunk_copy = dict(chunk)
+                chunk_copy["element_satisfaction"] = {
+                    "required_passed": result.required_satisfied,
+                    "optional_ratio": result.optional_ratio
+                }
+                return chunk_copy
+            return None
+
+    results = await asyncio.gather(*[check_one(c) for c in chunks])
+    return [r for r in results if r is not None]
