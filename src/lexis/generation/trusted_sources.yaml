@@ -1,0 +1,12 @@
+trusted_sources:
+  sec.gov: 1.0
+  law.cornell.edu: 0.98
+  supremecourt.gov: 1.0
+  congress.gov: 0.95
+  federalregister.gov: 0.95
+  irs.gov: 1.0
+  finra.org: 0.90
+  investor.gov: 0.95
+  ftc.gov: 0.95
+  internal_firm_documents: 1.0
+  partner_knowledge_base: 0.95
