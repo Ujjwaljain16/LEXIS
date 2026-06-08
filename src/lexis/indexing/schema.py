@@ -72,9 +72,12 @@ class ClusterSummary(BaseModel):
     
 class Proposition(BaseModel):
     """Tier B atomic fact extraction (Path C Foundation)."""
-    prop_id: str
-    source_chunk_id: str
-    text: str
+    prop_id: Optional[str] = None
+    chunk_id: str
+    doc_id: str
+    subject: str
+    predicate: str
+    object: str
 
 class HyPE(BaseModel):
     """Hypothetical Document Embeddings Model (Path B)."""
