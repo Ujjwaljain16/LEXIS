@@ -18,9 +18,9 @@ class LexisParser:
         """
         elements = partition_pdf(
             filename=file_path,
-            strategy="fast",
-            infer_table_structure=False,
-            extract_images_in_pdf=False,
+            strategy="hi_res",
+            infer_table_structure=True,
+            extract_images_in_pdf=True,
             include_page_breaks=False
         )
         return elements
