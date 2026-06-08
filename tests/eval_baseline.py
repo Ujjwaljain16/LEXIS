@@ -22,6 +22,7 @@ async def evaluate_pipeline(pdf_path: str):
         return
 
     pipeline = IngestionPipeline()
+    await pipeline.qdrant.initialize_collections()
     doc_id = "eval-doc-001"
     
     # 1. Ingest Document
