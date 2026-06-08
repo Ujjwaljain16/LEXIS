@@ -110,8 +110,12 @@ class IngestionPipeline:
             for prop in feat["propositions"]:
                 prop_str = f"{prop.subject} {prop.predicate} {prop.object}"
                 p_emb = self.embedder.embed_text(prop_str)
+                
+                # Generate deterministic prop_id if not present
+                prop_id_str = prop.prop_id if prop.prop_id else f"{chunk.chunk_id}_{prop_str}"
+                
                 prop_points.append(models.PointStruct(
-                    id=self._deterministic_uuid(prop.prop_id),
+                    id=self._deterministic_uuid(prop_id_str),
                     vector=p_emb.tolist(),
                     payload={"chunk_id": chunk.chunk_id, "doc_id": chunk.doc_id, "proposition": prop_str}
                 ))
@@ -128,10 +132,10 @@ class IngestionPipeline:
                 ))
 
         # Upsert Qdrant
-        if primary_points: await self.qdrant.upsert_chunks("primary", primary_points)
-        if hype_points: await self.qdrant.upsert_chunks("hype", hype_points)
-        if prop_points: await self.qdrant.upsert_chunks("propositions", prop_points)
-        if cluster_points: await self.qdrant.upsert_chunks("clusters", cluster_points)
+        if primary_points: await self.qdrant.upsert_chunks("primary_v2", primary_points)
+        if hype_points: await self.qdrant.upsert_chunks("hype_v2", hype_points)
+        if prop_points: await self.qdrant.upsert_chunks("propositions_v2", prop_points)
+        if cluster_points: await self.qdrant.upsert_chunks("clusters_v2", cluster_points)
         
         # Upsert ES
         if chunks:
