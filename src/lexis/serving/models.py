@@ -8,6 +8,7 @@ class JobState(str, Enum):
     RETRIEVAL = "RETRIEVAL"
     MAP_PHASE = "MAP_PHASE"
     REDUCE_PHASE = "REDUCE_PHASE"
+    SYNTHESIS = "SYNTHESIS"
     VERIFYING = "VERIFYING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
@@ -29,3 +30,4 @@ class BaseLexisResponse(BaseModel):
 class DeepModeEnqueueRequest(BaseModel):
     query: str
     metadata_filters: Dict[str, Any] = Field(default_factory=dict)
+
