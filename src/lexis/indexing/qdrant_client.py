@@ -19,9 +19,11 @@ class LexisQdrantClient:
         # We append _v2 to force Qdrant to create new collections with the updated 384 vector size
         collections = ["primary_v2", "hype_v2", "propositions_v2", "clusters_v2"]
         
+        collections_res = await self.client.get_collections()
+        existing = [c.name for c in collections_res.collections]
+        
         for name in collections:
-            exists = await self.client.collection_exists(collection_name=name)
-            if not exists:
+            if name not in existing:
                 await self.client.create_collection(
                     collection_name=name,
                     vectors_config=models.VectorParams(
@@ -53,9 +55,9 @@ class LexisQdrantClient:
 
     async def search(self, collection_name: str, query_vector: list[float], top_k: int = 5) -> list[models.ScoredPoint]:
         """Search a specific collection using cosine similarity."""
-        response = await self.client.query_points(
+        response = await self.client.search(
             collection_name=collection_name,
-            query=query_vector,
+            query_vector=query_vector,
             limit=top_k
         )
-        return response.points
+        return response
