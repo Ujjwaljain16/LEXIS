@@ -1,14 +1,22 @@
 import uuid
 import json
 import asyncio
+import logging
 from fastapi import APIRouter, Request, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from lexis.serving.models import BaseLexisResponse, DeepModeEnqueueRequest
+from lexis.serving.models import BaseLexisResponse, DeepModeEnqueueRequest, JobState
 from lexis.serving.telemetry import LexisTracer, get_trace_id
+from lexis.serving.redis_manager import RedisManager
 from lexis.indexing.pg_client import PostgresClient, CitationReference, DocumentMetadata
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/v2", tags=["Query", "Citations"])
 pg_client = PostgresClient()
+
+# Initialize Redis Manager globally for the router, connecting to local by default
+# In production, this would use FastAPI lifespan events to manage the connection pool
+redis_manager = RedisManager()
 
 # Security & Rate Limiting Mock Layer
 async def verify_api_key(request: Request):
@@ -52,7 +60,11 @@ async def query_fast(req: DeepModeEnqueueRequest, request: Request):
 async def query_deep_enqueue(req: DeepModeEnqueueRequest, background_tasks: BackgroundTasks):
     job_id = f"job_{uuid.uuid4().hex}"
     with LexisTracer.start_span("deep_mode_enqueue"):
-        pass # enqueue to Redis Streams
+        payload = {
+            "query": req.query,
+            "metadata_filters": req.metadata_filters,
+        }
+        await redis_manager.enqueue_job(job_id, payload)
         
     return BaseLexisResponse(
         request_id=str(uuid.uuid4()),
@@ -63,26 +75,58 @@ async def query_deep_enqueue(req: DeepModeEnqueueRequest, background_tasks: Back
 
 @router.get("/query/events/{job_id}")
 async def query_deep_events(job_id: str, request: Request):
-    """SSE Endpoint for Deep Mode progress updates."""
+    """SSE Endpoint for Deep Mode progress updates streaming from Redis PubSub."""
+    
     async def progress_generator():
-        states = ["QUEUED", "RUNNING", "RETRIEVAL", "MAP_PHASE", "REDUCE_PHASE", "VERIFYING", "COMPLETED"]
-        for state in states:
-            if await request.is_disconnected():
-                break
-            
-            event_type = "completed" if state == "COMPLETED" else "progress"
-            if state in ["FAILED", "CANCELLED"]:
-                event_type = state.lower()
+        pubsub = await redis_manager.subscribe(job_id)
+        logger.info(f"SSE Client subscribed to job_events:{job_id}")
+        
+        try:
+            while True:
+                if await request.is_disconnected():
+                    logger.info(f"SSE Client disconnected for job {job_id}")
+                    break
+
+                message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
+                if message:
+                    data_str = message.get("data")
+                    if data_str:
+                        data = json.loads(data_str)
+                        msg_type = data.get("type")
+                        
+                        if msg_type == "state_change":
+                            state = data.get("state")
+                            event_type = "status"
+                            if state == JobState.COMPLETED.value:
+                                event_type = "completed"
+                            elif state in [JobState.FAILED.value, JobState.CANCELLED.value, JobState.BUDGET_EXCEEDED.value]:
+                                event_type = "failed"
+                                
+                            yield f"event: {event_type}\ndata: {json.dumps({'job_id': job_id, 'state': state})}\n\n"
+                            
+                            # Terminal states
+                            if state in [JobState.COMPLETED.value, JobState.FAILED.value, JobState.CANCELLED.value, JobState.BUDGET_EXCEEDED.value]:
+                                break
+                        
+                        elif msg_type == "token":
+                            token = data.get("content")
+                            yield f"event: progress\ndata: {json.dumps({'token': token})}\n\n"
+                            
+                await asyncio.sleep(0.01)
                 
-            yield f"event: {event_type}\ndata: {json.dumps({'job_id': job_id, 'state': state, 'percent': 100/len(states)})}\n\n"
-            await asyncio.sleep(1) 
+        except Exception as e:
+            logger.error(f"Error in SSE stream for job {job_id}: {e}")
+            yield f"event: failed\ndata: {json.dumps({'error': 'SSE_STREAM_ERROR'})}\n\n"
+        finally:
+            await pubsub.unsubscribe(f"job_events:{job_id}")
+            # Do NOT close the redis_manager.client here since it's a global pool.
 
     return StreamingResponse(progress_generator(), media_type="text/event-stream")
 
 @router.delete("/query/{job_id}", response_model=BaseLexisResponse)
 async def cancel_job(job_id: str):
     with LexisTracer.start_span("cancel_job"):
-        pass # mark cancelled in Redis
+        await redis_manager.cancel_job(job_id)
     return BaseLexisResponse(
         request_id=str(uuid.uuid4()), trace_id=get_trace_id(), job_id=job_id,
         data={"message": "Job cancellation requested."}

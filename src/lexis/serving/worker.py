@@ -1,53 +1,38 @@
 import asyncio
 import logging
 import json
-from enum import Enum
+import time
+from typing import Dict, Any
+
 from lexis.serving.models import JobState
 from lexis.serving.telemetry import LexisTracer
+from lexis.serving.redis_manager import RedisManager
+from lexis.evaluation.cost_ledger import CostLedger, ResearchBudget
+from lexis.retrieval.engine import RetrievalEngine
+from lexis.retrieval.reranker import ContextAssembler
+from lexis.verification.judge_dep import filter_by_elements
+from lexis.reranking.map_reduce_filter import map_reduce_deep_mode
+from lexis.retrieval.synthesizer import LexisSynthesizer
+from lexis.retrieval.adapters import flatten_research_graph
+from lexis.config import settings
 
 logger = logging.getLogger(__name__)
 
 class DeepModeWorker:
     """
     Standalone worker for consuming Lexis Deep Mode tasks from Redis Streams.
-    Provides Consumer Group semantics, Dead Letter Queue (DLQ), and Cancellation support.
+    Provides Consumer Group semantics, DLQ, Telemetry, and Hard Budget Enforcement.
     """
-    def __init__(self, redis_client, stream_key: str = "lexis_deep_research_queue", dlq_key: str = "lexis_deep_research_dlq"):
-        self.redis = redis_client
-        self.stream_key = stream_key
-        self.dlq_key = dlq_key
-        self.group_name = "lexis_workers"
-        self.consumer_name = "worker_1" # In production, use hostname or UUID
+    def __init__(self, redis_manager: RedisManager):
+        self.redis = redis_manager
         self.max_retries = 3
+        self.engine = RetrievalEngine()
+        self.assembler = ContextAssembler()
+        self.synthesizer = LexisSynthesizer()
 
     async def initialize(self):
-        """Create the consumer group if it doesn't exist."""
-        try:
-            # redis command: XGROUP CREATE stream_key group_name $ MKSTREAM
-            pass
-        except Exception as e:
-            logger.info(f"Consumer group likely exists: {e}")
-
-    async def recover_pending_jobs(self):
-        """
-        Runs periodically to XAUTOCLAIM jobs that have been stuck in XPENDING 
-        for too long (e.g., if a worker crashed mid-map-phase).
-        """
-        logger.info("Checking for abandoned jobs in XPENDING...")
-        # await self.redis.xautoclaim(self.stream_key, self.group_name, self.consumer_name, min_idle_time=30000)
-        pass
-
-    async def update_job_state(self, job_id: str, state: JobState):
-        """Updates the state in Redis Hash and publishes to a PubSub channel for the SSE endpoint."""
-        # await self.redis.hset(f"job:{job_id}", "status", state.value)
-        # await self.redis.publish(f"job_events:{job_id}", json.dumps({"state": state.value}))
-        logger.info(f"Job {job_id} transitioned to {state.value}")
-
-    async def is_cancelled(self, job_id: str) -> bool:
-        """Checks if the user requested cancellation."""
-        # val = await self.redis.hget(f"job:{job_id}", "cancelled")
-        # return val == b"1"
-        return False
+        """Create the consumer group."""
+        await self.redis.init_consumer_group()
 
     async def run(self):
         """Main polling loop."""
@@ -58,78 +43,172 @@ class DeepModeWorker:
         while True:
             try:
                 iteration_count += 1
-                if iteration_count % 100 == 0:
-                    await self.recover_pending_jobs()
-
-                # 1. Read from stream
-                # messages = await self.redis.xreadgroup(...)
-                messages = [] # Mock
                 
-                for stream, msg_list in messages:
+                # Use XREADGROUP block for 5s
+                response = await self.redis.client.xreadgroup(
+                    self.redis.group_name, 
+                    "worker_1", 
+                    {self.redis.stream_key: ">"}, 
+                    count=1, 
+                    block=5000
+                )
+                
+                if not response:
+                    continue
+                    
+                for stream, msg_list in response:
                     for msg_id, payload in msg_list:
-                        job_id = payload.get(b"job_id", b"").decode()
-                        query = payload.get(b"query", b"").decode()
-                        retries = int(payload.get(b"retries", b"0"))
+                        job_id = payload.get("job_id")
+                        data_str = payload.get("payload")
+                        
+                        if not job_id or not data_str:
+                            await self.redis.ack_message(msg_id)
+                            continue
+                            
+                        data = json.loads(data_str)
+                        query = data.get("query", "")
+                        
+                        # Handle DLQ
+                        retries_raw = await self.redis.client.hget(f"job:{job_id}", "retries")
+                        retries = int(retries_raw) if retries_raw else 0
                         
                         if retries >= self.max_retries:
-                            # 2. Dead Letter Queue
                             logger.warning(f"Job {job_id} exceeded retries. Moving to DLQ.")
-                            # await self.redis.xadd(self.dlq_key, payload)
-                            # await self.redis.xack(self.stream_key, self.group_name, msg_id)
-                            await self.update_job_state(job_id, JobState.FAILED)
+                            await self.redis.move_to_dlq(job_id, payload)
+                            await self.redis.ack_message(msg_id)
                             continue
+                            
+                        await self.redis.client.hincrby(f"job:{job_id}", "retries", 1)
 
-                        # 3. Process Job
+                        start_t = time.time()
+                        
+                        # Process Job
                         await self.process_job(job_id, query)
                         
-                        # 4. Ack success
-                        # await self.redis.xack(self.stream_key, self.group_name, msg_id)
+                        # Ack success
+                        await self.redis.ack_message(msg_id)
                         
-                await asyncio.sleep(0.1) # Prevent CPU spin if empty
+                        job_duration = time.time() - start_t
+                        logger.info(f"Job {job_id} completed in {job_duration:.2f}s")
+                        
+            except asyncio.CancelledError:
+                break
             except Exception as e:
                 logger.error(f"Worker loop error: {e}")
                 await asyncio.sleep(5)
 
     async def process_job(self, job_id: str, query: str):
         """Executes the deep mode state machine."""
-        from lexis.evaluation.cost_ledger import CostLedger, ResearchBudget
         
-        # Initialize ledger with strict budget
-        ledger = CostLedger(query_id=job_id, budget=ResearchBudget(max_cost_usd=0.50))
+        budget = ResearchBudget(max_cost_usd=0.50, max_tokens=100000)
+        ledger = CostLedger(query_id=job_id, budget=budget)
         
-        with LexisTracer.start_span("deep_mode_job"):
+        with LexisTracer.start_span("deep_mode_job") as span:
+            span.set_attribute("job_id", job_id)
+            span.set_attribute("query", query)
             try:
-                await self.update_job_state(job_id, JobState.RUNNING)
+                # QUEUED -> RUNNING
+                await self.redis.publish_state(job_id, JobState.RUNNING.value)
                 
-                # Check cancellation between heavy phases
-                if await self.is_cancelled(job_id):
-                    await self.update_job_state(job_id, JobState.CANCELLED)
+                # Check cancellation
+                if await self.redis.check_cancellation(job_id):
+                    await self.redis.publish_state(job_id, JobState.CANCELLED.value)
                     return
 
-                await self.update_job_state(job_id, JobState.RETRIEVAL)
-                # await engine.retrieve(...)
+                # RUNNING -> MAP_PHASE (Retrieval is bundled into map_phase prep)
+                await self.redis.publish_state(job_id, JobState.MAP_PHASE.value)
+                
                 ledger.start_timer("retrieval")
-                await asyncio.sleep(1)
+                # 1. Retrieve & RRF
+                candidates = await self.engine.retrieve(
+                    query, 
+                    top_k_per_path=settings.deep_mode_top_k, 
+                    top_n_rrf=settings.deep_mode_rrf_candidates
+                )
                 ledger.stop_timer("retrieval")
                 
-                if await self.is_cancelled(job_id) or ledger.is_budget_exceeded():
-                    await self.update_job_state(job_id, JobState.CANCELLED)
-                    return
-                    
-                await self.update_job_state(job_id, JobState.MAP_PHASE)
-                # await engine.map_reduce(...)
+                if await self._check_stop_conditions(job_id, ledger): return
+                
+                ledger.start_timer("verification")
+                # 2. JudgeDEP
+                verified_chunks = await filter_by_elements(query, candidates)
+                ledger.stop_timer("verification")
+                
+                if await self._check_stop_conditions(job_id, ledger): return
+                
+                ledger.start_timer("rerank")
+                # 3. Sentence Window & Rerank Only
+                reranked_chunks = self.assembler.rerank_only(query, verified_chunks, top_k=settings.deep_mode_top_k)
+                ledger.stop_timer("rerank")
+                
+                if await self._check_stop_conditions(job_id, ledger): return
+
+                # MAP_PHASE -> REDUCE_PHASE
+                await self.redis.publish_state(job_id, JobState.REDUCE_PHASE.value)
+                
                 ledger.start_timer("generation")
-                await asyncio.sleep(2)
-                ledger.add_tokens("generation", 15000) # Mock heavy token usage
+                # 4. Map Reduce execution
+                subqueries = [query] # Simplified for POC
+                session = await map_reduce_deep_mode(
+                    session_id=job_id,
+                    query=query,
+                    subqueries=subqueries,
+                    chunks=reranked_chunks,
+                    budget=budget,
+                    model=settings.llm_model
+                )
                 ledger.stop_timer("generation")
                 
-                if await self.is_cancelled(job_id) or ledger.is_budget_exceeded():
-                    await self.update_job_state(job_id, JobState.CANCELLED)
-                    return
+                if await self._check_stop_conditions(job_id, ledger): return
                 
-                await self.update_job_state(job_id, JobState.COMPLETED)
+                # REDUCE_PHASE -> SYNTHESIS
+                await self.redis.publish_state(job_id, JobState.SYNTHESIS.value)
                 
+                ledger.start_timer("synthesis")
+                # 5. Graph Flattening & Final Synthesis
+                flattened_context = flatten_research_graph(session)
+                
+                # We want to yield tokens here to PubSub!
+                # LexisSynthesizer stream_answer is an async generator
+                async for token in self.synthesizer.stream_answer(query, flattened_context):
+                    await self.redis.publish_token(job_id, token)
+                ledger.stop_timer("synthesis")
+                
+                # SYNTHESIS -> COMPLETED
+                await self.redis.publish_state(job_id, JobState.COMPLETED.value)
+                
+                # Final Telemetry
+                LexisTracer.record_cost(span, ledger)
+                
+                # Record to REDIS hash as well
+                receipt = ledger.get_receipt()
+                await self.redis.client.hset(f"job:{job_id}", mapping={
+                    "total_cost_usd": str(receipt.estimated_cost_usd),
+                    "retrieval_ms": str(receipt.retrieval_ms),
+                    "verification_ms": str(receipt.verification_ms),
+                    "generation_ms": str(receipt.generation_ms)
+                })
+
             except Exception as e:
-                LexisTracer.record_error(LexisTracer.start_span("error"), e)
-                await self.update_job_state(job_id, JobState.FAILED)
-                raise
+                logger.error(f"Error processing job {job_id}: {e}", exc_info=True)
+                LexisTracer.record_error(span, e)
+                await self.redis.publish_state(job_id, JobState.FAILED.value)
+
+    async def _check_stop_conditions(self, job_id: str, ledger: CostLedger) -> bool:
+        """Checks for cancel or budget exhaustion and transitions state if needed. Returns True if stopped."""
+        if await self.redis.check_cancellation(job_id):
+            await self.redis.publish_state(job_id, JobState.CANCELLED.value)
+            return True
+            
+        if ledger.is_budget_exceeded():
+            logger.warning(f"Job {job_id} hit hard budget stop.")
+            await self.redis.publish_state(job_id, JobState.BUDGET_EXCEEDED.value)
+            await self.redis.client.hincrby("telemetry:global", "budget_exceeded_count", 1)
+            return True
+            
+        # Optional: 80% warning condition
+        if ledger.cost.estimated_cost_usd > (ledger.budget.max_cost_usd * 0.8):
+            logger.warning(f"Job {job_id} is at 80% of its budget!")
+            # Emitting warning to telemetry or via PubSub if desired
+            
+        return False

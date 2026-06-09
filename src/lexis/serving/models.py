@@ -12,6 +12,7 @@ class JobState(str, Enum):
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
     CANCELLED = "CANCELLED"
+    BUDGET_EXCEEDED = "BUDGET_EXCEEDED"
 
 class BaseLexisResponse(BaseModel):
     """
