@@ -16,7 +16,12 @@ pg_client = PostgresClient()
 
 # Initialize Redis Manager globally for the router, connecting to local by default
 # In production, this would use FastAPI lifespan events to manage the connection pool
-redis_manager = RedisManager()
+redis_manager = None
+def get_redis():
+    global redis_manager
+    if redis_manager is None:
+        redis_manager = RedisManager()
+    return redis_manager
 
 # Security & Rate Limiting Mock Layer
 async def verify_api_key(request: Request):
@@ -64,7 +69,7 @@ async def query_deep_enqueue(req: DeepModeEnqueueRequest, background_tasks: Back
             "query": req.query,
             "metadata_filters": req.metadata_filters,
         }
-        await redis_manager.enqueue_job(job_id, payload)
+        await get_redis().enqueue_job(job_id, payload)
         
     return BaseLexisResponse(
         request_id=str(uuid.uuid4()),
@@ -78,7 +83,7 @@ async def query_deep_events(job_id: str, request: Request):
     """SSE Endpoint for Deep Mode progress updates streaming from Redis PubSub."""
     
     async def progress_generator():
-        pubsub = await redis_manager.subscribe(job_id)
+        pubsub = await get_redis().subscribe(job_id)
         logger.info(f"SSE Client subscribed to job_events:{job_id}")
         
         try:
@@ -126,7 +131,7 @@ async def query_deep_events(job_id: str, request: Request):
 @router.delete("/query/{job_id}", response_model=BaseLexisResponse)
 async def cancel_job(job_id: str):
     with LexisTracer.start_span("cancel_job"):
-        await redis_manager.cancel_job(job_id)
+        await get_redis().cancel_job(job_id)
     return BaseLexisResponse(
         request_id=str(uuid.uuid4()), trace_id=get_trace_id(), job_id=job_id,
         data={"message": "Job cancellation requested."}
@@ -147,3 +152,4 @@ async def get_document(document_id: str):
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
     return doc
+
