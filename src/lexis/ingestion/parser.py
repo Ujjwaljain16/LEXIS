@@ -9,9 +9,10 @@ Expected Impact on Metrics: High citation accuracy; preserves exact spatial coor
 from unstructured.partition.pdf import partition_pdf
 from unstructured.documents.elements import Element
 from typing import List
+from lexis.ingestion.interfaces import BaseParser
 
-class LexisParser:
-    def parse_pdf(self, file_path: str) -> List[Element]:
+class LexisParser(BaseParser):
+    def parse(self, file_path: str) -> List[Element]:
         """
         Parses a PDF into structural elements with bounding box coordinates.
         Uses hi_res strategy for accurate layout parsing.

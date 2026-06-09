@@ -22,11 +22,13 @@ from lexis.indexing.qdrant_client import LexisQdrantClient
 from lexis.indexing.es_client import LexisElasticsearchClient
 from lexis.indexing.pg_client import PostgresClient, CitationReference, BoundingBox
 
+from lexis.ingestion.interfaces import BaseParser, BaseChunker, BaseEmbedder
+
 class IngestionPipeline:
-    def __init__(self):
-        self.parser = LexisParser()
-        self.embedder = BGEM3Embedder()
-        self.chunker = SemanticChunker(embedder=self.embedder)
+    def __init__(self, parser: BaseParser = None, embedder: BaseEmbedder = None, chunker: BaseChunker = None):
+        self.parser = parser if parser is not None else LexisParser()
+        self.embedder = embedder if embedder is not None else BGEM3Embedder()
+        self.chunker = chunker if chunker is not None else SemanticChunker(embedder=self.embedder)
         self.feature_extractor = FeatureExtractor()
         self.raptor = LexisRaptor(embedder=self.embedder)
         
@@ -43,10 +45,10 @@ class IngestionPipeline:
         End-to-End ingestion of a single document.
         """
         print(f"[{doc_id}] Parsing PDF...")
-        elements = self.parser.parse_pdf(file_path)
+        elements = self.parser.parse(file_path)
         
         print(f"[{doc_id}] Semantic Chunking...")
-        raw_chunks = self.chunker.chunk_elements(elements)
+        raw_chunks = self.chunker.chunk(elements)
         
         chunks: List[Chunk] = []
         for idx, rc in enumerate(raw_chunks):

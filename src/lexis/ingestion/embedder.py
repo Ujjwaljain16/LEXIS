@@ -9,8 +9,9 @@ Expected Impact on Metrics: High baseline retrieval recall due to BGE-M3's state
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from typing import List
+from lexis.ingestion.interfaces import BaseEmbedder
 
-class BGEM3Embedder:
+class BGEM3Embedder(BaseEmbedder):
     def __init__(self):
         # Using bge-small (133MB) instead of bge-m3 (2.27GB) to prevent OOM on 16GB RAM machines
         self.model = SentenceTransformer('BAAI/bge-small-en-v1.5')

@@ -9,8 +9,9 @@ Expected Impact on Metrics: Increases MRR by ensuring complete semantic concepts
 from typing import List, Dict, Any
 from unstructured.documents.elements import Element
 import numpy as np
+from lexis.ingestion.interfaces import BaseChunker
 
-class SemanticChunker:
+class SemanticChunker(BaseChunker):
     def __init__(self, embedder):
         self.embedder = embedder
         self.similarity_threshold = 0.85 # Cosine similarity threshold for semantic breaks
@@ -40,7 +41,7 @@ class SemanticChunker:
             max(box1[3], box2[3]),
         ]
 
-    def chunk_elements(self, elements: List[Element]) -> List[Dict[str, Any]]:
+    def chunk(self, elements: List[Element]) -> List[Dict[str, Any]]:
         """
         Groups unstructured elements into semantic chunks.
         """
