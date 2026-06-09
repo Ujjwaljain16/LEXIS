@@ -20,6 +20,7 @@ from lexis.ingestion.feature_extractor import FeatureExtractor
 from lexis.ingestion.raptor import LexisRaptor
 from lexis.indexing.qdrant_client import LexisQdrantClient
 from lexis.indexing.es_client import LexisElasticsearchClient
+from lexis.indexing.pg_client import PostgresClient, CitationReference, BoundingBox
 
 class IngestionPipeline:
     def __init__(self):
@@ -31,6 +32,7 @@ class IngestionPipeline:
         
         self.qdrant = LexisQdrantClient()
         self.es = LexisElasticsearchClient()
+        self.pg = PostgresClient()
 
     def _deterministic_uuid(self, string_id: str) -> str:
         """Qdrant requires pure UUIDs. We map our pqac- prefixed IDs to pure UUIDs."""
@@ -141,3 +143,22 @@ class IngestionPipeline:
         if chunks:
             es_docs = [{"chunk_id": c.chunk_id, "doc_id": c.doc_id, "content": c.raw_content} for c in chunks]
             await self.es.index_documents(es_docs)
+            
+        # Upsert Postgres Citations
+        await self.pg.initialize_schema()
+        for c in chunks:
+            bbox_list = c.metadata.bounding_box
+            if bbox_list and len(bbox_list) >= 4:
+                box = BoundingBox(x0=bbox_list[0], y0=bbox_list[1], x1=bbox_list[2], y1=bbox_list[3])
+                citation = CitationReference(
+                    pqac_id=c.pqac_key,
+                    document_id=c.doc_id,
+                    document_version=1,
+                    document_hash="",
+                    page=c.metadata.page_num or 1,
+                    bbox=box,
+                    text_span=c.raw_content,
+                    chunk_id=c.chunk_id,
+                    citation_confidence=1.0
+                )
+                await self.pg.insert_citation(citation)

@@ -55,25 +55,37 @@ async def rate_limit_deep():
 
 @router.post("/query/fast", dependencies=[Depends(verify_api_key), Depends(rate_limit_fast)])
 async def query_fast(req: DeepModeEnqueueRequest, request: Request):
-    """Executes fast-mode retrieval, streaming SSE responses within 2s SLA."""
-    req_id = str(uuid.uuid4())
+    """Executes fast-mode retrieval, streaming SSE responses via real retrieval stack."""
     trace_id = get_trace_id()
+    eng, asm, syn = get_fast_components()
 
     async def event_generator():
         try:
             with LexisTracer.start_span("fast_mode_query"):
-                yield f"event: status\ndata: {json.dumps({'status': 'retrieving', 'trace_id': trace_id})}\n\n"
-                await asyncio.sleep(0.5) 
+                yield f"event: status\ndata: {json.dumps({'status': 'RETRIEVAL', 'trace_id': trace_id})}\n\n"
+                # Retrieve & RRF
+                candidates = await eng.retrieve(req.query, top_k_per_path=5, top_n_rrf=15)
                 
-                yield f"event: status\ndata: {json.dumps({'status': 'synthesizing', 'trace_id': trace_id})}\n\n"
+                yield f"event: status\ndata: {json.dumps({'status': 'RERANK_PHASE', 'trace_id': trace_id})}\n\n"
+                # Rerank
+                reranked_chunks = asm.rerank_only(req.query, candidates, top_k=5)
                 
-                for token in ["This ", "is ", "a ", "fast ", "response."]:
+                yield f"event: status\ndata: {json.dumps({'status': 'SYNTHESIS', 'trace_id': trace_id})}\n\n"
+                # Flatten simple context
+                context_parts = []
+                for chunk in reranked_chunks:
+                    p = chunk.get("payload", {})
+                    context_parts.append(f"[{p.get('pqac_key', 'unknown')}] {p.get('content', '')}")
+                context_str = "\n\n".join(context_parts)
+                
+                # Stream Synthesis
+                async for token in syn.stream_answer(req.query, context_str):
                     yield f"event: progress\ndata: {json.dumps({'token': token})}\n\n"
-                    await asyncio.sleep(0.1)
                 
                 yield "event: completed\ndata: {}\n\n"
-        except asyncio.TimeoutError:
-            yield f"event: failed\ndata: {json.dumps({'error': 'FAST_MODE_TIMEOUT'})}\n\n"
+        except Exception as e:
+            logger.error(f"Fast Mode Error: {e}", exc_info=True)
+            yield f"event: failed\ndata: {json.dumps({'error': str(e)})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
