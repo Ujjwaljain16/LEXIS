@@ -3,7 +3,10 @@ import asyncio
 from fastapi.testclient import TestClient
 from lexis.serving.api import router, query_fast_events
 
-client = TestClient(router)
+from fastapi import FastAPI
+app = FastAPI()
+app.include_router(router)
+client = TestClient(app)
 
 async def test_fast_mode():
     print("[Test] 1. Posting to Fast Mode...")
