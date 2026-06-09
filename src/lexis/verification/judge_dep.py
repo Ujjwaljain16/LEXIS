@@ -91,11 +91,9 @@ async def check_elements(
             optional_ratio=opt_ratio,
             passes=passes
         )
-        
     except Exception as e:
         logger.error(f"Element check failed: {e}")
-        # Conservative fallback: don't block the chunk if the judge errors out
-        return ElementCheckResult(required_satisfied=True, optional_ratio=1.0, passes=True)
+        raise e
 
 async def filter_by_elements(
     query: str,
@@ -107,18 +105,43 @@ async def filter_by_elements(
     Must run BEFORE RRF to avoid reranking junk.
     """
     semaphore = asyncio.Semaphore(max_concurrent)
+    
+    # Telemetry
+    telemetry = {
+        "verification_attempts": 0,
+        "verification_successes": 0,
+        "verification_failures": 0,
+        "verification_fail_open": 0
+    }
 
     async def check_one(chunk):
+        telemetry["verification_attempts"] += 1
         async with semaphore:
-            result = await check_elements(query, chunk)
-            if result.passes:
-                chunk_copy = dict(chunk)
-                chunk_copy["element_satisfaction"] = {
-                    "required_passed": result.required_satisfied,
-                    "optional_ratio": result.optional_ratio
-                }
-                return chunk_copy
-            return None
+            # We must detect fail_open by mocking the check slightly or catching inside check_elements?
+            # Actually, check_elements logs "Element check failed: ..." and returns passes=True.
+            # To cleanly track fail-open, we would need check_elements to return a status enum or we can track it.
+            # We'll just run it as-is for now, wait, the user requested explicit telemetry.
+            # Let's intercept exceptions locally or modify check_elements.
+            try:
+                result = await check_elements(query, chunk)
+                if result.passes:
+                    telemetry["verification_successes"] += 1
+                    chunk_copy = dict(chunk)
+                    chunk_copy["element_satisfaction"] = {
+                        "required_passed": result.required_satisfied,
+                        "optional_ratio": result.optional_ratio
+                    }
+                    return chunk_copy
+                else:
+                    telemetry["verification_failures"] += 1
+                    return None
+            except Exception as e:
+                # If an exception bubbles out (though check_elements currently catches it)
+                telemetry["verification_fail_open"] += 1
+                return dict(chunk)
 
     results = await asyncio.gather(*[check_one(c) for c in chunks])
+    
+    logger.info(f"JudgeDEP Telemetry: {telemetry}")
+    
     return [r for r in results if r is not None]

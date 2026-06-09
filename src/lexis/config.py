@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     
     environment: str = "development"
     log_level: str = "INFO"
+    
+    # Deep Mode Configuration
+    deep_mode_rrf_candidates: int = 8
+    deep_mode_top_k: int = 5
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

@@ -47,13 +47,17 @@ class RetrievalEngine:
 
     async def _path_d_bm25(self, query_text: str, top_k: int) -> List[Dict[str, Any]]:
         """Searches Elasticsearch with BM25."""
-        return await self.es.search(query_text, size=top_k)
+        try:
+            return await self.es.search(query_text, size=top_k)
+        except Exception as e:
+            logger.warning(f"Elasticsearch is unavailable, falling back to Vector-Only Mode. Error: {e}")
+            return []
         
     async def _path_primary_vector(self, query_emb: List[float], top_k: int) -> List[Any]:
         """Fallback base vector search on primary chunks."""
         return await self.qdrant.search("primary_v2", query_emb, top_k=top_k)
 
-    async def retrieve(self, query: str, top_k_per_path: int = 5) -> List[Dict[str, Any]]:
+    async def retrieve(self, query: str, top_k_per_path: int = 5, top_n_rrf: int = None) -> List[Dict[str, Any]]:
         """
         Executes concurrent retrieval across all configured paths.
         De-duplicates by chunk_id.
@@ -107,5 +111,8 @@ class RetrievalEngine:
         # Sort by RRF score descending
         sorted_c_ids = sorted(rrf_scores.keys(), key=lambda x: rrf_scores[x], reverse=True)
         final_chunks = [chunk_payloads[cid] for cid in sorted_c_ids]
+
+        if top_n_rrf is not None:
+            final_chunks = final_chunks[:top_n_rrf]
 
         return final_chunks

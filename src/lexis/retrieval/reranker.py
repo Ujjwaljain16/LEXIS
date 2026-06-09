@@ -75,6 +75,38 @@ class ContextAssembler:
             logger.error(f"Reranking failed: {e}")
             return self._pack_chunks(chunks)
 
+    def rerank_only(self, query: str, chunks: List[Dict[str, Any]], top_k: int = 5) -> List[Dict[str, Any]]:
+        """
+        Deep Mode Contract.
+        Scores and sorts the chunks descending, trimming exactly to top_k.
+        Does NOT apply token packing or Lost-in-the-Middle interleaving.
+        """
+        if not chunks:
+            return []
+
+        if not self.reranker:
+            logger.warning("Reranker not loaded. Falling back to naive trimming.")
+            return chunks[:top_k]
+
+        pairs = []
+        for chunk in chunks:
+            text = chunk.get("text") or chunk.get("content") or chunk.get("proposition") or chunk.get("questions")
+            if isinstance(text, list):
+                text = " ".join(text)
+            text = str(text) if text else ""
+            pairs.append([query, text])
+
+        try:
+            scores = self.reranker.predict(pairs)
+            for i, chunk in enumerate(chunks):
+                chunk["_relevance_score"] = float(scores[i])
+            
+            ranked_chunks = sorted(chunks, key=lambda x: x.get("_relevance_score", -999.0), reverse=True)
+            return ranked_chunks[:top_k]
+        except Exception as e:
+            logger.error(f"Reranking failed: {e}")
+            return chunks[:top_k]
+
     def _pack_chunks(self, ranked_chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         packed = []
         current_tokens = 0
