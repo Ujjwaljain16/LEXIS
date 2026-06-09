@@ -16,10 +16,12 @@ class QueryCost(BaseModel):
     rerank_ms: float = 0.0
     verification_ms: float = 0.0
     generation_ms: float = 0.0
+    synthesis_ms: float = 0.0
     
     retrieval_tokens: int = 0
     verification_tokens: int = 0
     generation_tokens: int = 0
+    synthesis_tokens: int = 0
     
     @property
     def estimated_cost_usd(self) -> float:
@@ -65,4 +67,5 @@ class CostLedger:
 
     def get_receipt(self) -> QueryCost:
         return self.cost
+
 
