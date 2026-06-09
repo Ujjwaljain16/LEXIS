@@ -15,6 +15,15 @@ class JobState(str, Enum):
     CANCELLED = "CANCELLED"
     BUDGET_EXCEEDED = "BUDGET_EXCEEDED"
 
+class IngestionJobState(str, Enum):
+    QUEUED = "QUEUED"
+    PARSING = "PARSING"
+    CHUNKING = "CHUNKING"
+    FEATURE_EXTRACTION = "FEATURE_EXTRACTION"
+    INDEXING = "INDEXING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
 class BaseLexisResponse(BaseModel):
     """
     Standard envelope for all API responses, ensuring trace IDs are always present

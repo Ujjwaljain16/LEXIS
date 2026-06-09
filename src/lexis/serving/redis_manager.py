@@ -19,23 +19,35 @@ class RedisManager:
         # Streams
         self.stream_key = "lexis_deep_research_queue"
         self.dlq_key = "lexis_deep_research_dlq"
+        self.ingest_stream_key = "lexis:ingest:tasks"
+        self.ingest_dlq_key = "lexis:ingest:dlq"
         self.group_name = "lexis_workers"
 
     async def init_consumer_group(self):
         """Idempotent creation of Consumer Group."""
         try:
             await self.client.xgroup_create(self.stream_key, self.group_name, id="0", mkstream=True)
-            logger.info(f"Consumer group '{self.group_name}' initialized.")
+            logger.info(f"Consumer group '{self.group_name}' initialized for query stream.")
         except redis.exceptions.ResponseError as e:
-            if "BUSYGROUP" in str(e):
-                logger.info(f"Consumer group '{self.group_name}' already exists.")
-            else:
-                raise e
+            if "BUSYGROUP" not in str(e): raise e
+
+        try:
+            await self.client.xgroup_create(self.ingest_stream_key, self.group_name, id="0", mkstream=True)
+            logger.info(f"Consumer group '{self.group_name}' initialized for ingest stream.")
+        except redis.exceptions.ResponseError as e:
+            if "BUSYGROUP" not in str(e): raise e
 
     async def enqueue_job(self, job_id: str, payload: Dict[str, Any]) -> str:
-        """Push job to stream and init state."""
+        """Push query job to stream and init state."""
         await self.client.hset(f"job:{job_id}", mapping={"status": "QUEUED", "retries": 0, "cancelled": "0"})
         msg_id = await self.client.xadd(self.stream_key, {"job_id": job_id, "payload": json.dumps(payload)})
+        return msg_id
+
+    async def enqueue_ingest_job(self, job_id: str, file_path: str, doc_id: str) -> str:
+        """Push ingest job to ingest stream."""
+        await self.client.hset(f"ingest_job:{job_id}", mapping={"retries": 0})
+        payload = {"job_id": job_id, "file_path": file_path, "doc_id": doc_id}
+        msg_id = await self.client.xadd(self.ingest_stream_key, {"payload": json.dumps(payload)})
         return msg_id
 
     async def publish_state(self, job_id: str, state: str):
@@ -57,11 +69,18 @@ class RedisManager:
 
     async def ack_message(self, msg_id: str):
         await self.client.xack(self.stream_key, self.group_name, msg_id)
+        
+    async def ack_ingest_message(self, msg_id: str):
+        await self.client.xack(self.ingest_stream_key, self.group_name, msg_id)
 
     async def move_to_dlq(self, job_id: str, payload: Dict[str, Any]):
-        """Move unprocessable job to DLQ."""
+        """Move unprocessable query job to DLQ."""
         await self.client.xadd(self.dlq_key, {"job_id": job_id, "payload": json.dumps(payload), "reason": "max_retries"})
         await self.publish_state(job_id, "FAILED")
+
+    async def move_ingest_to_dlq(self, job_id: str, payload: Dict[str, Any]):
+        """Move unprocessable ingest job to DLQ."""
+        await self.client.xadd(self.ingest_dlq_key, {"job_id": job_id, "payload": json.dumps(payload), "reason": "max_retries"})
 
     async def subscribe(self, job_id: str):
         """Returns a pubsub object subscribed to the job events."""

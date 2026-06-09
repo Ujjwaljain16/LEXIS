@@ -40,13 +40,17 @@ class IngestionPipeline:
         """Qdrant requires pure UUIDs. We map our pqac- prefixed IDs to pure UUIDs."""
         return str(uuid.uuid5(uuid.NAMESPACE_DNS, string_id))
 
-    async def ingest_document(self, file_path: str, doc_id: str):
+    async def ingest_document(self, file_path: str, doc_id: str, progress_callback=None):
         """
         End-to-End ingestion of a single document.
         """
+        if progress_callback:
+            await progress_callback("PARSING")
         print(f"[{doc_id}] Parsing PDF...")
         elements = self.parser.parse(file_path)
         
+        if progress_callback:
+            await progress_callback("CHUNKING")
         print(f"[{doc_id}] Semantic Chunking...")
         raw_chunks = self.chunker.chunk(elements)
         
@@ -64,6 +68,9 @@ class IngestionPipeline:
                 metadata=metadata
             ))
 
+        if progress_callback:
+            await progress_callback("FEATURE_EXTRACTION")
+
         print(f"[{doc_id}] Extracting Features (Propositions & HyPE) concurrently...")
         batch_size = 10
         all_features = []
@@ -76,8 +83,13 @@ class IngestionPipeline:
         print(f"[{doc_id}] Building RAPTOR Tree...")
         raptor_summaries = await self.raptor.build_tree(chunks)
 
+        if progress_callback:
+            await progress_callback("INDEXING")
         print(f"[{doc_id}] Upserting to Databases...")
         await self._upsert_to_databases(chunks, all_features, raptor_summaries)
+        
+        if progress_callback:
+            await progress_callback("COMPLETED")
         print(f"[{doc_id}] Ingestion Complete.")
 
     async def _upsert_to_databases(self, chunks: List[Chunk], features: List[dict], raptor_summaries: List[dict]):

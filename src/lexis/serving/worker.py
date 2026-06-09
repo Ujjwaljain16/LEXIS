@@ -212,3 +212,117 @@ class DeepModeWorker:
             # Emitting warning to telemetry or via PubSub if desired
             
         return False
+
+from lexis.ingestion.pipeline import IngestionPipeline
+from lexis.indexing.pg_client import PostgresClient
+
+class IngestionWorker:
+    """
+    Standalone worker for consuming Lexis Ingestion tasks from Redis Streams.
+    Provides Consumer Group semantics, Exponential Backoff, DLQ, and Job State tracking.
+    """
+    def __init__(self, redis_manager: RedisManager):
+        self.redis = redis_manager
+        self.max_retries = 3
+        # Single instance pipeline reused for all jobs (avoiding repeated init costs)
+        self.pipeline = IngestionPipeline()
+        self.pg = PostgresClient()
+
+    async def initialize(self):
+        """Create the consumer group."""
+        await self.redis.init_consumer_group()
+        await self.pg.initialize_schema()
+
+    async def run(self):
+        """Main polling loop."""
+        logger.info("Starting Lexis Ingestion Worker...")
+        await self.initialize()
+        
+        while True:
+            try:
+                # Use XREADGROUP block for 5s
+                response = await self.redis.client.xreadgroup(
+                    self.redis.group_name, 
+                    "ingest_worker_1", 
+                    {self.redis.ingest_stream_key: ">"}, 
+                    count=1, 
+                    block=5000
+                )
+                
+                if not response:
+                    continue
+                    
+                for stream, msg_list in response:
+                    for msg_id, payload in msg_list:
+                        data_str = payload.get("payload")
+                        if not data_str:
+                            await self.redis.ack_ingest_message(msg_id)
+                            continue
+                            
+                        data = json.loads(data_str)
+                        job_id = data.get("job_id")
+                        file_path = data.get("file_path")
+                        doc_id = data.get("doc_id")
+                        
+                        if not job_id or not file_path or not doc_id:
+                            await self.redis.ack_ingest_message(msg_id)
+                            continue
+                            
+                        # Handle Retries and DLQ
+                        retries_raw = await self.redis.client.hget(f"ingest_job:{job_id}", "retries")
+                        retries = int(retries_raw) if retries_raw else 0
+                        
+                        if retries >= self.max_retries:
+                            logger.warning(f"Ingest Job {job_id} exceeded retries. Moving to DLQ.")
+                            await self.redis.move_ingest_to_dlq(job_id, payload)
+                            await self.pg.update_ingestion_job_state(job_id, "FAILED", "Max retries exceeded.")
+                            await self.redis.ack_ingest_message(msg_id)
+                            continue
+                            
+                        if retries > 0:
+                            # Exponential backoff (10s, 30s, 90s)
+                            backoff = 10 * (3 ** (retries - 1))
+                            logger.info(f"Applying backoff of {backoff}s for job {job_id}")
+                            await asyncio.sleep(backoff)
+                            
+                        await self.redis.client.hincrby(f"ingest_job:{job_id}", "retries", 1)
+
+                        start_t = time.time()
+                        
+                        # Process Job
+                        await self.process_job(job_id, file_path, doc_id, is_retry=(retries > 0))
+                        
+                        # Ack success
+                        await self.redis.ack_ingest_message(msg_id)
+                        
+                        job_duration = time.time() - start_t
+                        logger.info(f"Ingest Job {job_id} completed in {job_duration:.2f}s")
+                        
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Ingest worker loop error: {e}")
+                await asyncio.sleep(5)
+
+    async def process_job(self, job_id: str, file_path: str, doc_id: str, is_retry: bool):
+        """Executes the ingestion state machine via pipeline callback."""
+        
+        async def progress_callback(state: str):
+            logger.info(f"[Job {job_id}] -> {state}")
+            await self.pg.update_ingestion_job_state(job_id, state)
+            
+        try:
+            # We are now picking up the job
+            await self.pg.update_ingestion_job_state(job_id, "PARSING", increment_retry=is_retry)
+            
+            await self.pipeline.ingest_document(
+                file_path=file_path, 
+                doc_id=doc_id, 
+                progress_callback=progress_callback
+            )
+            
+        except Exception as e:
+            logger.error(f"Error processing ingest job {job_id}: {e}", exc_info=True)
+            await self.pg.update_ingestion_job_state(job_id, "FAILED", error_message=str(e))
+            # Raise so the outer loop doesn't ACK and it can be retried
+            raise

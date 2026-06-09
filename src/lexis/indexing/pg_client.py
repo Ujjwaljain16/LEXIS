@@ -63,6 +63,17 @@ class PostgresClient:
                     pdf_url TEXT,
                     version INT
                 );
+                
+                CREATE TABLE IF NOT EXISTS ingestion_jobs (
+                    job_id VARCHAR PRIMARY KEY,
+                    document_id VARCHAR NOT NULL,
+                    status VARCHAR NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    started_at TIMESTAMP,
+                    completed_at TIMESTAMP,
+                    error_message TEXT,
+                    retry_count INT DEFAULT 0
+                );
             ''')
 
     async def insert_citation(self, citation: CitationReference):
@@ -71,7 +82,7 @@ class PostgresClient:
             await conn.execute('''
                 INSERT INTO citation_references 
                 (pqac_id, document_id, document_version, document_hash, page, x0, y0, x1, y1, text_span, chunk_id, citation_confidence)
-                VALUES (, , , , , , , , , , , )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 ON CONFLICT (pqac_id) DO UPDATE SET
                     document_id = EXCLUDED.document_id,
                     page = EXCLUDED.page,
@@ -111,9 +122,41 @@ class PostgresClient:
         try:
             await self.connect()
             async with self.pool.acquire() as conn:
-                row = await conn.fetchrow("SELECT * FROM document_metadata WHERE document_id = ", document_id)
+                row = await conn.fetchrow("SELECT * FROM document_metadata WHERE document_id = $1", document_id)
                 if row:
                     return DocumentMetadata(**dict(row))
         except Exception as e:
             logger.warning(f"Best-effort document lookup failed for {document_id}: {e}")
         return None
+
+    async def create_ingestion_job(self, job_id: str, document_id: str):
+        await self.connect()
+        async with self.pool.acquire() as conn:
+            await conn.execute('''
+                INSERT INTO ingestion_jobs (job_id, document_id, status)
+                VALUES ($1, $2, 'QUEUED')
+                ON CONFLICT (job_id) DO NOTHING;
+            ''', job_id, document_id)
+
+    async def update_ingestion_job_state(self, job_id: str, status: str, error_message: str = None, increment_retry: bool = False):
+        await self.connect()
+        async with self.pool.acquire() as conn:
+            query = "UPDATE ingestion_jobs SET status = $2"
+            args = [job_id, status]
+            idx = 3
+            
+            if status == "PARSING": # Or first active state
+                query += f", started_at = COALESCE(started_at, CURRENT_TIMESTAMP)"
+            elif status in ["COMPLETED", "FAILED"]:
+                query += f", completed_at = CURRENT_TIMESTAMP"
+                
+            if error_message is not None:
+                query += f", error_message = ${idx}"
+                args.append(error_message)
+                idx += 1
+                
+            if increment_retry:
+                query += f", retry_count = retry_count + 1"
+                
+            query += " WHERE job_id = $1"
+            await conn.execute(query, *args)
