@@ -9,6 +9,7 @@ import logging
 from datetime import datetime
 from typing import List, Dict, Optional
 from pydantic import BaseModel, Field
+from lexis.evaluation.cost_ledger import ResearchBudget
 from litellm import acompletion
 
 from ..cache.base import CachedEvidence
@@ -18,10 +19,7 @@ logger = logging.getLogger(__name__)
 
 # --- Data Structures ---
 
-class ResearchBudget(BaseModel):
-    max_subqueries: int = 4
-    max_map_calls: int = 20
-    max_cost_usd: float = 0.5
+
 
 class ResearchNode(BaseModel):
     query: str
@@ -165,3 +163,4 @@ async def map_reduce_deep_mode(
         query=query,
         graph=graph
     )
+

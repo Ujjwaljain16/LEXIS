@@ -5,6 +5,8 @@ import time
 class ResearchBudget(BaseModel):
     max_cost_usd: float = 0.50  # Hard stop at 50 cents per query
     max_tokens: int = 100_000
+    max_subqueries: int = 4
+    max_map_calls: int = 20
 
 class QueryCost(BaseModel):
     """Tracks token consumption and latency for a single query workflow."""
@@ -63,3 +65,4 @@ class CostLedger:
 
     def get_receipt(self) -> QueryCost:
         return self.cost
+
