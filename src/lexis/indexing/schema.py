@@ -42,6 +42,10 @@ class Chunk(BaseModel):
     expanded_content: Optional[str] = None
     metadata: ChunkMetadata
     
+    @property
+    def content(self) -> str:
+        return self.expanded_content if self.expanded_content else self.raw_content
+
     @classmethod
     def create(cls, doc_id: str, split_idx: int, raw_content: str, metadata: ChunkMetadata) -> "Chunk":
         """

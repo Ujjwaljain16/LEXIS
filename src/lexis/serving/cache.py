@@ -52,3 +52,37 @@ def get_cache() -> EvidenceSummaryCache:
     if os.getenv("REDIS_URL"):
         return RedisEvidenceSummaryCache()
     return MemoryEvidenceSummaryCache()
+
+class RedisEmbeddingCache:
+    def __init__(self, redis_url: str = "redis://localhost:6379/0"):
+        self.redis_url = os.getenv("REDIS_URL", redis_url)
+        self.client = redis.from_url(self.redis_url, decode_responses=True)
+        self.ttl = 86400  # 1 day
+
+    async def get(self, query_hash: str) -> Optional[list[float]]:
+        try:
+            raw = await self.client.get(f"emb:{query_hash}")
+            if raw:
+                return json.loads(raw)
+        except Exception as e:
+            logger.error(f"Redis emb get failed: {e}")
+        return None
+
+    async def set(self, query_hash: str, emb: list[float]) -> None:
+        try:
+            await self.client.setex(f"emb:{query_hash}", self.ttl, json.dumps(emb))
+        except Exception as e:
+            logger.error(f"Redis emb set failed: {e}")
+
+class MemoryEmbeddingCache:
+    def __init__(self):
+        self.cache = {}
+    async def get(self, query_hash: str) -> Optional[list[float]]:
+        return self.cache.get(query_hash)
+    async def set(self, query_hash: str, emb: list[float]) -> None:
+        self.cache[query_hash] = emb
+
+def get_emb_cache():
+    if os.getenv("REDIS_URL"):
+        return RedisEmbeddingCache()
+    return MemoryEmbeddingCache()

@@ -9,6 +9,7 @@ import logging
 from typing import List, Dict, Tuple
 from litellm import acompletion
 from pydantic import BaseModel
+from lexis.generation.prompts import ELEMENT_CHECK_PROMPT
 
 logger = logging.getLogger(__name__)
 
@@ -16,25 +17,6 @@ class ElementCheckResult(BaseModel):
     required_satisfied: bool
     optional_ratio: float
     passes: bool
-
-ELEMENT_CHECK_PROMPT = """You are a strict legal verification judge.
-Does the query scenario satisfy the constitutive elements of this legal clause?
-
-Query: "{query}"
-
-Required Elements (ALL must be satisfied):
-{required_elements}
-
-Optional Elements (Rate how many are satisfied):
-{optional_elements}
-
-For each element, answer true or false.
-Output ONLY valid JSON:
-{{
-    "required": {{"element_1": true, "element_2": false}},
-    "optional": {{"element_3": true}}
-}}
-"""
 
 async def check_elements(
     query: str,
@@ -72,7 +54,14 @@ async def check_elements(
             response_format={"type": "json_object"}
         )
         
-        results = json.loads(response.choices[0].message.content.strip())
+        content = response.choices[0].message.content.strip()
+        if content.startswith("```json"):
+            content = content[7:]
+        if content.startswith("```"):
+            content = content[3:]
+        if content.endswith("```"):
+            content = content[:-3]
+        results = json.loads(content.strip())
         
         req_results = results.get("required", {})
         opt_results = results.get("optional", {})

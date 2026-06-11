@@ -8,12 +8,16 @@ from lexis.serving.models import JobState
 from lexis.serving.telemetry import LexisTracer
 from lexis.serving.redis_manager import RedisManager
 from lexis.evaluation.cost_ledger import CostLedger, ResearchBudget
-from lexis.retrieval.engine import RetrievalEngine
-from lexis.retrieval.reranker import ContextAssembler
+from lexis.retrieval.hybrid_retriever import RetrievalEngine
+from lexis.generation.context_assembler import ContextAssembler
 from lexis.verification.judge_dep import filter_by_elements
 from lexis.reranking.map_reduce_filter import map_reduce_deep_mode
-from lexis.retrieval.synthesizer import LexisSynthesizer
+from lexis.generation.synthesizer import LexisSynthesizer
 from lexis.retrieval.adapters import flatten_research_graph
+from lexis.reranking.sentence_window import SentenceWindowExpansion
+from lexis.generation.crag_router import route_crag
+from lexis.retrieval.interfaces import Candidate
+from lexis.indexing.qdrant_client import LexisQdrantClient
 from lexis.config import settings
 
 logger = logging.getLogger(__name__)
@@ -29,6 +33,24 @@ class DeepModeWorker:
         self.engine = RetrievalEngine()
         self.assembler = ContextAssembler()
         self.synthesizer = LexisSynthesizer()
+        self.qdrant = LexisQdrantClient()
+        self.sentence_expander = SentenceWindowExpansion(
+            fetch_chunk_fn=self._fetch_chunk, 
+            window_size=1
+        )
+
+    async def _fetch_chunk(self, chunk_id: str) -> Candidate:
+        records = await self.qdrant.get_points("primary_v2", [chunk_id])
+        if records:
+            rec = records[0]
+            return Candidate(
+                chunk_id=rec.id,
+                score=1.0,
+                source_path=rec.payload.get("source_file", ""),
+                metadata=rec.payload,
+                content=rec.payload.get("content", "")
+            )
+        return None
 
     async def initialize(self):
         """Create the consumer group."""
@@ -129,19 +151,44 @@ class DeepModeWorker:
                 
                 if await self._check_stop_conditions(job_id, ledger): return
                 
-                ledger.start_timer("verification")
-                # 2. JudgeDEP
-                verified_chunks = await filter_by_elements(query, candidates)
-                ledger.stop_timer("verification")
-                
-                if await self._check_stop_conditions(job_id, ledger): return
-                
+                # CRAG Routing Fallback
+                max_score = candidates[0].get("rrf_score", 0.0) if candidates else 0.0
+                if max_score == 0.0 and candidates and "score" in candidates[0]:
+                    max_score = candidates[0]["score"]
+                candidates = await route_crag(query, candidates, max_score)
+
                 ledger.start_timer("rerank")
-                # 3. Sentence Window & Rerank Only
-                reranked_chunks = self.assembler.rerank_only(query, verified_chunks, top_k=settings.deep_mode_top_k)
+                # 2. Rerank Only
+                reranked_chunks = self.assembler.rerank_only(query, candidates, top_k=settings.deep_mode_top_k)
                 ledger.stop_timer("rerank")
                 
                 if await self._check_stop_conditions(job_id, ledger): return
+                
+                ledger.start_timer("verification")
+                # 3. JudgeDEP on Top K only
+                verified_chunks = await filter_by_elements(query, reranked_chunks)
+                ledger.stop_timer("verification")
+                
+                if await self._check_stop_conditions(job_id, ledger): return
+
+                # 3.5 Sentence Window Expansion
+                candidates_to_expand = []
+                for c in verified_chunks:
+                    c_obj = Candidate(
+                        chunk_id=c.get("payload", {}).get("chunk_id", ""),
+                        score=c.get("cross_encoder_score", 0.0),
+                        source_path=c.get("payload", {}).get("source_file", ""),
+                        metadata=c.get("payload", {}),
+                        content=c.get("payload", {}).get("content", "")
+                    )
+                    candidates_to_expand.append(c_obj)
+                    
+                expanded_candidates = await self.sentence_expander.transform(query, candidates_to_expand)
+                
+                # Convert back to dict expected by map_reduce
+                final_chunks = []
+                for ec in expanded_candidates:
+                    final_chunks.append({"payload": ec.metadata, "content": ec.content, "chunk_id": ec.chunk_id, "cross_encoder_score": ec.score})
 
                 # MAP_PHASE -> REDUCE_PHASE
                 await self.redis.publish_state(job_id, JobState.REDUCE_PHASE.value)
@@ -153,7 +200,7 @@ class DeepModeWorker:
                     session_id=job_id,
                     query=query,
                     subqueries=subqueries,
-                    chunks=reranked_chunks,
+                    chunks=final_chunks,
                     budget=budget,
                     model=settings.llm_model
                 )

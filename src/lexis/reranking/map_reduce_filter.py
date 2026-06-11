@@ -13,13 +13,12 @@ from lexis.evaluation.cost_ledger import ResearchBudget
 from litellm import acompletion
 
 from ..cache.base import CachedEvidence
-from ..cache.redis_cache import get_cache
+from ..serving.cache import get_cache
+from lexis.generation.prompts import EVIDENCE_EXTRACTION_PROMPT
 
 logger = logging.getLogger(__name__)
 
 # --- Data Structures ---
-
-
 
 class ResearchNode(BaseModel):
     query: str
@@ -36,19 +35,6 @@ class ResearchSession(BaseModel):
     query: str
     graph: ResearchGraph
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-
-# --- Prompts ---
-
-EVIDENCE_EXTRACTION_PROMPT = """You are a legal research analyst.
-Extract exactly WHY this text answers the query. 
-If it does NOT answer the query, output exactly: "NO_EVIDENCE".
-
-Query: "{query}"
-
-Text: "{text}"
-
-Output your reasoning succinctly.
-"""
 
 # --- Core Logic ---
 

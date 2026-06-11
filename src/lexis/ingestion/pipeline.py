@@ -17,7 +17,7 @@ from lexis.ingestion.parser import LexisParser
 from lexis.ingestion.embedder import BGEM3Embedder
 from lexis.ingestion.chunker import SemanticChunker
 from lexis.ingestion.feature_extractor import FeatureExtractor
-from lexis.ingestion.raptor import LexisRaptor
+from lexis.indexing.raptor import LexisRaptor
 from lexis.indexing.qdrant_client import LexisQdrantClient
 from lexis.indexing.es_client import LexisElasticsearchClient
 from lexis.indexing.pg_client import PostgresClient, CitationReference, BoundingBox
@@ -42,64 +42,32 @@ class IngestionPipeline:
 
     async def ingest_document(self, file_path: str, doc_id: str, progress_callback=None):
         """
-        End-to-End ingestion of a single document.
+        End-to-End ingestion of a single document for Foundation Phase.
         """
         if progress_callback:
             await progress_callback("PARSING")
-        print(f"[{doc_id}] Parsing PDF...")
-        elements = self.parser.parse(file_path)
+        print(f"[{doc_id}] Parsing Document...")
+        elements = self.parser.parse(file_path, doc_id)
         
         if progress_callback:
             await progress_callback("CHUNKING")
         print(f"[{doc_id}] Semantic Chunking...")
-        raw_chunks = self.chunker.chunk(elements)
-        
-        chunks: List[Chunk] = []
-        for idx, rc in enumerate(raw_chunks):
-            metadata = ChunkMetadata(
-                source_file=file_path,
-                page_num=rc["page_num"],
-                bounding_box=rc["bounding_box"]
-            )
-            chunks.append(Chunk.create(
-                doc_id=doc_id,
-                split_idx=idx,
-                raw_content=rc["text"],
-                metadata=metadata
-            ))
-
-        if progress_callback:
-            await progress_callback("FEATURE_EXTRACTION")
-
-        print(f"[{doc_id}] Extracting Features (Propositions & HyPE) concurrently...")
-        batch_size = 10
-        all_features = []
-        for i in range(0, len(chunks), batch_size):
-            batch = chunks[i:i+batch_size]
-            tasks = [self.feature_extractor.extract_features(c) for c in batch]
-            results = await asyncio.gather(*tasks)
-            all_features.extend(results)
-
-        print(f"[{doc_id}] Building RAPTOR Tree...")
-        raptor_summaries = await self.raptor.build_tree(chunks)
+        chunks: List[Chunk] = self.chunker.chunk(elements)
 
         if progress_callback:
             await progress_callback("INDEXING")
         print(f"[{doc_id}] Upserting to Databases...")
-        await self._upsert_to_databases(chunks, all_features, raptor_summaries)
+        await self._upsert_to_databases(chunks)
         
         if progress_callback:
             await progress_callback("COMPLETED")
         print(f"[{doc_id}] Ingestion Complete.")
 
-    async def _upsert_to_databases(self, chunks: List[Chunk], features: List[dict], raptor_summaries: List[dict]):
+    async def _upsert_to_databases(self, chunks: List[Chunk]):
         primary_points = []
-        hype_points = []
-        prop_points = []
-        cluster_points = []
         
         # 1. Primary Chunks
-        texts = [c.raw_content for c in chunks]
+        texts = [c.content for c in chunks] # embed the CCH prepended content
         if not texts:
             return
             
@@ -108,54 +76,23 @@ class IngestionPipeline:
             primary_points.append(models.PointStruct(
                 id=self._deterministic_uuid(c.chunk_id),
                 vector=emb.tolist(),
-                payload={"chunk_id": c.chunk_id, "doc_id": c.doc_id, "text": c.raw_content, "page_num": c.metadata.page_num}
+                payload={
+                    "chunk_id": c.chunk_id, 
+                    "doc_id": c.doc_id, 
+                    "content": c.raw_content, 
+                    "page_num": c.metadata.page_num,
+                    "doc_type": c.metadata.document_type
+                }
             ))
-            
-        # 2. HyPE and Propositions
-        for chunk, feat in zip(chunks, features):
-            questions = feat["hype"].hypothesis_questions
-            if questions:
-                q_text = " ".join(questions)
-                q_emb = self.embedder.embed_text(q_text)
-                hype_points.append(models.PointStruct(
-                    id=self._deterministic_uuid(chunk.chunk_id + "_hype"),
-                    vector=q_emb.tolist(),
-                    payload={"chunk_id": chunk.chunk_id, "doc_id": chunk.doc_id, "questions": questions}
-                ))
-            
-            for prop in feat["propositions"]:
-                prop_str = f"{prop.subject} {prop.predicate} {prop.object}"
-                p_emb = self.embedder.embed_text(prop_str)
-                
-                # Generate deterministic prop_id if not present
-                prop_id_str = prop.prop_id if prop.prop_id else f"{chunk.chunk_id}_{prop_str}"
-                
-                prop_points.append(models.PointStruct(
-                    id=self._deterministic_uuid(prop_id_str),
-                    vector=p_emb.tolist(),
-                    payload={"chunk_id": chunk.chunk_id, "doc_id": chunk.doc_id, "proposition": prop_str}
-                ))
-
-        # 3. RAPTOR
-        if raptor_summaries:
-            summary_texts = [s["chunk"].raw_content for s in raptor_summaries]
-            sum_embs = self.embedder.embed_batch(summary_texts)
-            for s, emb in zip(raptor_summaries, sum_embs):
-                cluster_points.append(models.PointStruct(
-                    id=self._deterministic_uuid(s["chunk"].chunk_id),
-                    vector=emb.tolist(),
-                    payload={"chunk_id": s["chunk"].chunk_id, "doc_id": s["chunk"].doc_id, "level": s["level"]}
-                ))
 
         # Upsert Qdrant
-        if primary_points: await self.qdrant.upsert_chunks("primary_v2", primary_points)
-        if hype_points: await self.qdrant.upsert_chunks("hype_v2", hype_points)
-        if prop_points: await self.qdrant.upsert_chunks("propositions_v2", prop_points)
-        if cluster_points: await self.qdrant.upsert_chunks("clusters_v2", cluster_points)
+        if primary_points: 
+            from lexis.config import settings
+            await self.qdrant.upsert_chunks(settings.qdrant_collection_primary, primary_points)
         
         # Upsert ES
         if chunks:
-            es_docs = [{"chunk_id": c.chunk_id, "doc_id": c.doc_id, "content": c.raw_content} for c in chunks]
+            es_docs = [{"chunk_id": c.chunk_id, "doc_id": c.doc_id, "content": c.raw_content, "doc_type": c.metadata.document_type, "source_file": c.metadata.source_file} for c in chunks]
             await self.es.index_documents(es_docs)
             
         # Upsert Postgres Citations
