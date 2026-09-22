@@ -1,0 +1,19 @@
+# P6: release readiness.
+phase: p6_release
+description: Everything reproducible from a clean clone, with no regression against P1-P3 results.
+split: test
+status: provisional
+criteria:
+  - id: repro_hash_mismatches
+    metric: repro_hash_mismatches
+    type: absolute_max
+    threshold: 0
+    description: Re-running the eval from a clean clone must reproduce every recorded config/data hash.
+  - id: recall30_no_regression_vs_p1
+    metric: recall@30
+    type: no_regression
+    tolerance: 0.01
+  - id: hardcode_violations_over_baseline
+    metric: hardcode_violations_over_baseline
+    type: absolute_max
+    threshold: 0

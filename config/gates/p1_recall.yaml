@@ -1,0 +1,22 @@
+# P1: first-stage recall ladder (contextual prefix, HyPE, embedder bake-off).
+phase: p1_recall
+description: At least one ladder rung must produce a statistically supported Recall@30 gain.
+split: test
+status: provisional
+criteria:
+  - id: recall30_gain
+    metric: recall@30
+    type: relative_gain
+    min_effect: 0.0
+    description: Paired CI excludes zero, adjusted p < alpha.
+  - id: recall30_floor
+    metric: recall@30
+    type: absolute_min
+    use: lo
+    threshold: 0.65
+    description: Conservative floor - the CI lower bound, not the mean.
+  - id: recall100_floor
+    metric: recall@100
+    type: absolute_min
+    use: mean
+    threshold: 0.85

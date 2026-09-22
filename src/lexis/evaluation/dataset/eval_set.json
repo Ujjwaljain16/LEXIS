@@ -1,7 +1,0 @@
-[
-  {
-    "query": "Sample evaluation query",
-    "expected_chunks": ["chunk1"],
-    "expected_answer": "Sample answer"
-  }
-]

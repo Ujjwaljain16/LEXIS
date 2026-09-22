@@ -1,0 +1,144 @@
+{
+  "evaluation/failure_analyzer.py": {
+    "numeric:comparison": 1
+  },
+  "evaluation/generate_dataset.py": {
+    "numeric:call_keyword": 1,
+    "numeric:comparison": 1,
+    "string:hf_repo_id": 1
+  },
+  "evaluation/harness.py": {
+    "numeric:function_default": 1
+  },
+  "evaluation/metrics.py": {
+    "numeric:function_default": 3
+  },
+  "evaluation/provenance.py": {
+    "numeric:call_keyword": 1
+  },
+  "evaluation/query_reformulation.py": {
+    "numeric:function_default": 3
+  },
+  "evaluation/run_depth_sensitivity.py": {
+    "numeric:call_keyword": 2
+  },
+  "evaluation/run_eval.py": {
+    "numeric:call_keyword": 3
+  },
+  "evaluation/run_hard_miss_diagnostics.py": {
+    "numeric:call_keyword": 6
+  },
+  "evaluation/run_oracle_query_diagnostic.py": {
+    "numeric:call_keyword": 2,
+    "numeric:comparison": 2,
+    "numeric:module_constant": 2
+  },
+  "evaluation/run_query_reformulation.py": {
+    "numeric:call_keyword": 4,
+    "numeric:comparison": 2,
+    "numeric:module_constant": 2
+  },
+  "evaluation/run_stats_report.py": {
+    "numeric:call_keyword": 2
+  },
+  "evaluation/splits.py": {
+    "numeric:comparison": 1
+  },
+  "evaluation/stats.py": {
+    "numeric:function_default": 6,
+    "numeric:module_constant": 1
+  },
+  "generation/context_assembler.py": {
+    "numeric:function_default": 2,
+    "string:model_identifier": 1
+  },
+  "generation/crag_router.py": {
+    "numeric:call_keyword": 1,
+    "numeric:function_default": 2,
+    "string:url_literal": 1
+  },
+  "generation/decoding.py": {
+    "numeric:comparison": 2
+  },
+  "generation/synthesizer.py": {
+    "numeric:call_keyword": 1,
+    "numeric:comparison": 1
+  },
+  "generation/trust_scorer.py": {
+    "numeric:module_constant": 1
+  },
+  "indexing/bm25_index.py": {
+    "numeric:function_default": 1
+  },
+  "indexing/es_client.py": {
+    "numeric:function_default": 1
+  },
+  "indexing/qdrant_client.py": {
+    "numeric:function_default": 1
+  },
+  "indexing/raptor.py": {
+    "numeric:call_keyword": 3,
+    "numeric:function_default": 1
+  },
+  "ingestion/chunker.py": {
+    "numeric:comparison": 2
+  },
+  "ingestion/embedder.py": {
+    "numeric:call_keyword": 1,
+    "numeric:comparison": 1
+  },
+  "ingestion/hype_generator.py": {
+    "numeric:call_keyword": 1
+  },
+  "ingestion/pipeline.py": {
+    "numeric:comparison": 1
+  },
+  "quality/hardcode_lint.py": {
+    "string:hf_repo_id": 2
+  },
+  "reranking/cross_encoder.py": {
+    "string:model_identifier": 1
+  },
+  "reranking/map_reduce_filter.py": {
+    "numeric:function_default": 1,
+    "string:model_identifier": 1
+  },
+  "retrieval/complexity_classifier.py": {
+    "numeric:call_keyword": 6,
+    "numeric:comparison": 3,
+    "string:model_identifier": 2
+  },
+  "retrieval/fusion.py": {
+    "numeric:function_default": 1
+  },
+  "retrieval/hybrid_retriever.py": {
+    "numeric:function_default": 4
+  },
+  "retrieval/query_decomposer.py": {
+    "numeric:call_keyword": 1,
+    "string:model_identifier": 1
+  },
+  "serving/cache.py": {
+    "string:url_literal": 2
+  },
+  "serving/redis_manager.py": {
+    "string:url_literal": 1
+  },
+  "serving/routes/citation.py": {
+    "numeric:call_keyword": 2
+  },
+  "serving/routes/ingest.py": {
+    "numeric:call_keyword": 2
+  },
+  "serving/routes/query.py": {
+    "numeric:call_keyword": 4,
+    "string:hf_repo_id": 2
+  },
+  "serving/worker.py": {
+    "numeric:call_keyword": 4
+  },
+  "verification/judge_dep.py": {
+    "numeric:function_default": 2,
+    "string:model_identifier": 1
+  }
+}

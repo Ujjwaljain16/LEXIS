@@ -1,0 +1,47 @@
+# Canonical experiment defaults (lowest-precedence layer).
+# Precedence: defaults -> jurisdiction pack -> experiment file(s) -> CLI --set overrides.
+# Retrieval values currently mirror lexis.config.Settings so the frozen baseline is reproducible.
+retrieval:
+  rrf_k: 61
+  top_k_per_path: 15
+  fusion_top_k: 50
+  path_timeout_s: 2.0
+
+# One flag per rung of the retrieval improvement ladder (plan section 4). Off = frozen baseline behaviour.
+flags:
+  contextual_prefix: false
+  hype: false
+  feature_normalization: false
+  rerank: false
+  query_rewrite: false
+  doc_routing: false
+
+rerank:
+  candidates: 100
+  threshold: null      # set from a dev-split calibration, never hand-picked
+
+# The frozen baseline's scope and reference artifact. Controls in diagnostic runs re-derive the
+# baseline metrics on exactly this scope and must reproduce the artifact's numbers.
+frozen_baseline:
+  contracts: 10
+  questions: 50
+  report: evaluation/reports/cuad_baseline_run1.json
+
+diagnostics:
+  # A non-relevant chunk containing at least this fraction of the answer's tokens is treated as
+  # "almost the answer" (evidence the chunk label is stricter than the meaning).
+  answer_overlap_threshold: 0.8
+  # A retrieval path that times out silently returns nothing (single-path result). Measurement runs
+  # detect this and retry the call this many extra times, recording every retry in the artifact.
+  max_call_retries: 3
+
+eval:
+  depths: [30, 100, 200]
+  bootstrap_resamples: 10000
+  alpha: 0.05
+  seed: 0
+  split:
+    salt: lexis-eval-v1
+    fractions:
+      dev: 0.7
+      test: 0.3

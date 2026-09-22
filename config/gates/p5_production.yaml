@@ -1,0 +1,21 @@
+# P5: production hardening, measured on the deployed target.
+phase: p5_production
+description: Latency, error rate and durability under load.
+split: test
+status: provisional
+criteria:
+  - id: load_p95_ms_at_20_users
+    metric: load_latency_p95_ms
+    type: absolute_max
+    use: hi
+    threshold: 6000
+  - id: load_error_rate
+    metric: load_error_rate
+    type: absolute_max
+    use: hi
+    threshold: 0.01
+  - id: worker_kill_data_loss
+    metric: worker_kill_lost_tasks
+    type: absolute_max
+    threshold: 0
+    description: Kill a worker mid-ingest; every task must be reclaimed and completed.

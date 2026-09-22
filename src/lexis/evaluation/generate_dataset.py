@@ -4,7 +4,6 @@ import asyncio
 import logging
 from pathlib import Path
 from litellm import acompletion
-import kagglehub
 from lexis.ingestion.pipeline import IngestionPipeline
 from lexis.config import settings
 
@@ -51,6 +50,12 @@ async def extract_questions_from_chunk(chunk_id: str, content: str) -> list:
     return []
 
 async def generate_dataset():
+    try:
+        import kagglehub  # optional: only this legacy dataset-download path needs it
+    except ImportError as e:
+        raise RuntimeError(
+            "generate_dataset() needs the optional 'kagglehub' package (pip install kagglehub)."
+        ) from e
     logger.info("Downloading Atticus Open Contract Dataset via kagglehub...")
     # NOTE: Requires KAGGLE_USERNAME and KAGGLE_KEY environment variables
     dataset_path = kagglehub.dataset_download("theatticusproject/atticus-open-contract-dataset-aok-beta")

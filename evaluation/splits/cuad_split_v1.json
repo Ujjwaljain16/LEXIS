@@ -1,0 +1,2609 @@
+{
+  "version": 1,
+  "benchmark": "cuad",
+  "salt": "lexis-eval-v1",
+  "fractions": {
+    "dev": 0.7,
+    "test": 0.3
+  },
+  "pinned": {
+    "dev": [
+      "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement",
+      "ABILITYINC_06_15_2020-EX-4.25-SERVICES AGREEMENT",
+      "ACCELERATEDTECHNOLOGIESHOLDINGCORP_04_24_2003-EX-10.13-JOINT VENTURE AGREEMENT",
+      "ACCURAYINC_09_01_2010-EX-10.31-DISTRIBUTOR AGREEMENT",
+      "ADAMSGOLFINC_03_21_2005-EX-10.17-ENDORSEMENT AGREEMENT",
+      "ADAPTIMMUNETHERAPEUTICSPLC_04_06_2017-EX-10.11-STRATEGIC ALLIANCE AGREEMENT",
+      "ADIANUTRITION,INC_04_01_2005-EX-10.D2-RESELLER AGREEMENT",
+      "ADMA BioManufacturing, LLC -  Amendment #3 to Manufacturing Agreement ",
+      "ADUROBIOTECH,INC_06_02_2020-EX-10.7-CONSULTING AGREEMENT",
+      "ADUROBIOTECH,INC_06_02_2020-EX-10.7-CONSULTING AGREEMENT(1)"
+    ]
+  },
+  "counts": {
+    "dev": {
+      "contracts": 346,
+      "answerable_questions": 4669
+    },
+    "test": {
+      "contracts": 164,
+      "answerable_questions": 2033
+    }
+  },
+  "splits": {
+    "dev": [
+      {
+        "title": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement",
+        "doc_id": "cuad-4c0c0b56f453231d",
+        "num_answerable_questions": 19
+      },
+      {
+        "title": "ABILITYINC_06_15_2020-EX-4.25-SERVICES AGREEMENT",
+        "doc_id": "cuad-77ab0faa303507ad",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "ACCELERATEDTECHNOLOGIESHOLDINGCORP_04_24_2003-EX-10.13-JOINT VENTURE AGREEMENT",
+        "doc_id": "cuad-4403902dc755f990",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "ACCURAYINC_09_01_2010-EX-10.31-DISTRIBUTOR AGREEMENT",
+        "doc_id": "cuad-424083274037f63d",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "ADAMSGOLFINC_03_21_2005-EX-10.17-ENDORSEMENT AGREEMENT",
+        "doc_id": "cuad-2d790a4a4132cc53",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "ADAPTIMMUNETHERAPEUTICSPLC_04_06_2017-EX-10.11-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-d79af9017d6a1712",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "ADIANUTRITION,INC_04_01_2005-EX-10.D2-RESELLER AGREEMENT",
+        "doc_id": "cuad-ee0a586b86e0d876",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "ADMA BioManufacturing, LLC -  Amendment #3 to Manufacturing Agreement ",
+        "doc_id": "cuad-a9feced849a71551",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "ADUROBIOTECH,INC_06_02_2020-EX-10.7-CONSULTING AGREEMENT",
+        "doc_id": "cuad-ea1bc6961e3cd999",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "ADUROBIOTECH,INC_06_02_2020-EX-10.7-CONSULTING AGREEMENT(1)",
+        "doc_id": "cuad-8c7e7f51de1f6f17",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "AFSALABANCORPINC_08_01_1996-EX-1.1-AGENCY AGREEMENT",
+        "doc_id": "cuad-14a9449b4e8152a3",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "AIRSPANNETWORKSINC_04_11_2000-EX-10.5-Distributor Agreement",
+        "doc_id": "cuad-a7559c456c1cac33",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "ALAMOGORDOFINANCIALCORP_12_16_1999-EX-1-AGENCY AGREEMENT",
+        "doc_id": "cuad-68cddebdb4818c56",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "ALCOSTORESINC_12_14_2005-EX-10.26-AGENCY AGREEMENT",
+        "doc_id": "cuad-44f2d91d2f85cc34",
+        "num_answerable_questions": 7
+      },
+      {
+        "title": "ALLISONTRANSMISSIONHOLDINGSINC_12_15_2014-EX-99.1-COOPERATION AGREEMENT",
+        "doc_id": "cuad-0a34989c9499a728",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "AMBASSADOREYEWEARGROUPINC_11_17_1997-EX-10.28-ENDORSEMENT AGREEMENT",
+        "doc_id": "cuad-eb90a08533425ec4",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "AMERICANPHYSICIANSCAPITALINC_03_31_2003-EX-10.26-AGENCY AGREEMENT",
+        "doc_id": "cuad-22bf5f270d80d1c6",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "ANIXABIOSCIENCESINC_06_09_2020-EX-10.1-COLLABORATION AGREEMENT",
+        "doc_id": "cuad-d5c845aa10defe38",
+        "num_answerable_questions": 19
+      },
+      {
+        "title": "ARMSTRONGFLOORING,INC_01_07_2019-EX-10.2-INTELLECTUAL PROPERTY AGREEMENT",
+        "doc_id": "cuad-aaa5f698be3207e0",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "ASHWORTHINC_01_29_1999-EX-10.(D)-PROMOTION AGREEMENT AND NANTZ COMMUNICATIONS, INC.",
+        "doc_id": "cuad-56595f07907c75eb",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "ATENTOSA_07_06_2020-EX-99.1-JOINT FILING AGREEMENT",
+        "doc_id": "cuad-97dff5061ffa9098",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "ATHENSBANCSHARESCORP_11_02_2009-EX-1.2-AGENCY AGREEMENT , 2009",
+        "doc_id": "cuad-f2641a93a6aa66a4",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "ATMOSENERGYCORP_11_22_2002-EX-10.17-TRANSPORTATION SERVICE AGREEMENT",
+        "doc_id": "cuad-58039d19cef6fdf2",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "AULAMERICANUNITTRUST_04_24_2020-EX-99.8.77-SERVICING AGREEMENT",
+        "doc_id": "cuad-eff9f68b25324a3a",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "AgapeAtpCorp_20191202_10-KA_EX-10.1_11911128_EX-10.1_Supply Agreement",
+        "doc_id": "cuad-09945fdfc8ff4401",
+        "num_answerable_questions": 19
+      },
+      {
+        "title": "AimmuneTherapeuticsInc_20200205_8-K_EX-10.3_11967170_EX-10.3_Development Agreement",
+        "doc_id": "cuad-daa145549ddb6ff4",
+        "num_answerable_questions": 25
+      },
+      {
+        "title": "AlliedEsportsEntertainmentInc_20190815_8-K_EX-10.19_11788293_EX-10.19_Content License Agreement",
+        "doc_id": "cuad-20fc9465057b9783",
+        "num_answerable_questions": 19
+      },
+      {
+        "title": "AlliedEsportsEntertainmentInc_20190815_8-K_EX-10.34_11788308_EX-10.34_Sponsorship Agreement",
+        "doc_id": "cuad-49b71a8202ff0e87",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "Antares Pharma, Inc. - Manufacturing Agreement",
+        "doc_id": "cuad-871f14e107390dae",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "Apollo Endosurgery - Manufacturing and Supply Agreement",
+        "doc_id": "cuad-dc912d9643438d07",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "ArcGroupInc_20171211_8-K_EX-10.1_10976103_EX-10.1_Sponsorship Agreement",
+        "doc_id": "cuad-06394bd0cd5327dd",
+        "num_answerable_questions": 6
+      },
+      {
+        "title": "ArconicRolledProductsCorp_20191217_10-12B_EX-2.7_11923804_EX-2.7_Trademark License Agreement",
+        "doc_id": "cuad-00e0c7a0877ea7c2",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "ArmstrongFlooringInc_20190107_8-K_EX-10.2_11471795_EX-10.2_Intellectual Property Agreement",
+        "doc_id": "cuad-e8ccacc23b1d2ea9",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "Array BioPharma Inc. - LICENSE, DEVELOPMENT AND COMMERCIALIZATION AGREEMENT",
+        "doc_id": "cuad-a0e14c30056968d8",
+        "num_answerable_questions": 23
+      },
+      {
+        "title": "ArtaraTherapeuticsInc_20200110_8-K_EX-10.5_11943350_EX-10.5_License Agreement",
+        "doc_id": "cuad-459af1da32c9b34a",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "AudibleInc_20001113_10-Q_EX-10.32_2599586_EX-10.32_Co-Branding Agreement_ Marketing Agreement_ Investment Distribution Agreement",
+        "doc_id": "cuad-8dae71a0548a1e8b",
+        "num_answerable_questions": 22
+      },
+      {
+        "title": "AzulSa_20170303_F-1A_EX-10.3_9943903_EX-10.3_Maintenance Agreement1",
+        "doc_id": "cuad-08636f6df2840b29",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "AzulSa_20170303_F-1A_EX-10.3_9943903_EX-10.3_Maintenance Agreement2",
+        "doc_id": "cuad-5b7da866952b5a7d",
+        "num_answerable_questions": 6
+      },
+      {
+        "title": "BABCOCK_WILCOXENTERPRISES,INC_08_04_2015-EX-10.17-INTELLECTUAL PROPERTY AGREEMENT between THE BABCOCK _ WILCOX COMPANY and BABCOCK _ WILCOX ENTERPRISES, INC.",
+        "doc_id": "cuad-7eb54db0558f8e05",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "BANGIINC_05_25_2005-EX-10-Premium Managed Hosting Agreement",
+        "doc_id": "cuad-b8190b6925021858",
+        "num_answerable_questions": 5
+      },
+      {
+        "title": "BANUESTRAFINANCIALCORP_09_08_2006-EX-10.16-AGENCY AGREEMENT",
+        "doc_id": "cuad-75bb5c0a7ad7618a",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "BELLICUMPHARMACEUTICALS,INC_05_07_2019-EX-10.1-Supply Agreement",
+        "doc_id": "cuad-ac330c6c3a9cc049",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "BERKELEYLIGHTS,INC_06_26_2020-EX-10.12-COLLABORATION AGREEMENT",
+        "doc_id": "cuad-03a1e0f461f5359c",
+        "num_answerable_questions": 29
+      },
+      {
+        "title": "BEYONDCOMCORP_08_03_2000-EX-10.2-CO-HOSTING AGREEMENT",
+        "doc_id": "cuad-f32c83d3c06a2116",
+        "num_answerable_questions": 19
+      },
+      {
+        "title": "BIOAMBERINC_04_10_2013-EX-10.34-DEVELOPMENT AGREEMENT (1)",
+        "doc_id": "cuad-ca962b20182e8114",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "BIOAMBERINC_04_10_2013-EX-10.34-DEVELOPMENT AGREEMENT - First Amendment",
+        "doc_id": "cuad-a1eb8cea36e9e976",
+        "num_answerable_questions": 4
+      },
+      {
+        "title": "BIOFRONTERAAG_04_29_2019-EX-4.17-SUPPLY AGREEMENT",
+        "doc_id": "cuad-87eb592671e1a6ec",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "BLACKBOXSTOCKSINC_08_05_2014-EX-10.1-DISTRIBUTOR AGREEMENT",
+        "doc_id": "cuad-dcc473aeb5d73e25",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "BLACKROCKMUNIHOLDINGSINVESTMENTQUALITYFUND_04_07_2020-EX-99.01-JOINT FILING AGREEMENT",
+        "doc_id": "cuad-ad71954812bea26a",
+        "num_answerable_questions": 4
+      },
+      {
+        "title": "BLACKSTONEGSOLONG-SHORTCREDITINCOMEFUND_05_11_2020-EX-99.(K)(1)-SERVICE AGREEMENT",
+        "doc_id": "cuad-9c1d25ff54aa143d",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "BLUEHILLSBANCORP,INC_05_20_2014-EX-1.1-AGENCY AGREEMENT",
+        "doc_id": "cuad-5561fa0782b0141f",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "BLUEROCKRESIDENTIALGROWTHREIT,INC_06_01_2016-EX-1.1-AGENCY AGREEMENT",
+        "doc_id": "cuad-6226053fc767e29f",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "BNCMORTGAGEINC_05_17_1999-EX-10.4-LICENSING AND WEB SITE HOSTING AGREEMENT",
+        "doc_id": "cuad-d176f68442e9314a",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "BORROWMONEYCOM,INC_06_11_2020-EX-10.1-JOINT VENTURE AGREEMENT",
+        "doc_id": "cuad-5e4d61688a78b4eb",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "BUFFALOWILDWINGSINC_06_05_1998-EX-10.3-FRANCHISE AGREEMENT",
+        "doc_id": "cuad-d3ecacf84a89fd17",
+        "num_answerable_questions": 26
+      },
+      {
+        "title": "BellringBrandsInc_20190920_S-1_EX-10.12_11817081_EX-10.12_Manufacturing Agreement2",
+        "doc_id": "cuad-40bb1b8d54f85cff",
+        "num_answerable_questions": 5
+      },
+      {
+        "title": "BellringBrandsInc_20190920_S-1_EX-10.12_11817081_EX-10.12_Manufacturing Agreement4",
+        "doc_id": "cuad-ee325a27b6d15b7b",
+        "num_answerable_questions": 4
+      },
+      {
+        "title": "BerkshireHillsBancorpInc_20120809_10-Q_EX-10.16_7708169_EX-10.16_Endorsement Agreement",
+        "doc_id": "cuad-191875361562eb7d",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "BizzingoInc_20120322_8-K_EX-10.17_7504499_EX-10.17_Endorsement Agreement",
+        "doc_id": "cuad-c56cd29fcb58d740",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "BloomEnergyCorp_20180321_DRSA (on S-1)_EX-10_11240356_EX-10_Maintenance Agreement",
+        "doc_id": "cuad-c05f56d07036e211",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "CANOPETROLEUM,INC_12_13_2007-EX-10.1-Sponsorship Agreement",
+        "doc_id": "cuad-34b2a3872f19ed5d",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "CARDAX,INC_08_19_2014-EX-10.1-COLLABORATION AGREEMENT",
+        "doc_id": "cuad-6d3b64d92f2cc29c",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "CCAINDUSTRIESINC_04_14_2014-EX-10.1-OUTSOURCING AGREEMENT",
+        "doc_id": "cuad-57cdb9ed63d6890f",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "CENTRACKINTERNATIONALINC_10_29_1999-EX-10.3-WEB SITE HOSTING AGREEMENT",
+        "doc_id": "cuad-99dea8d7575fd353",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "CERES,INC_01_25_2012-EX-10.20-Collaboration Agreement",
+        "doc_id": "cuad-7c7b9fab0f2daf60",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "CHANGEPOINTCORP_03_08_2000-EX-10.6-LICENSE AND HOSTING AGREEMENT",
+        "doc_id": "cuad-5c2a9dcbe0cc7593",
+        "num_answerable_questions": 25
+      },
+      {
+        "title": "CHEETAHMOBILEINC_04_22_2014-EX-10.43-Cooperation Agreement",
+        "doc_id": "cuad-4ea81ed0b7302e93",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "CHERRYHILLMORTGAGEINVESTMENTCORP_09_26_2013-EX-10.1-Strategic Alliance Agreement",
+        "doc_id": "cuad-ba6a4e8c0bf4d167",
+        "num_answerable_questions": 6
+      },
+      {
+        "title": "CHIPMOSTECHNOLOGIESBERMUDALTD_04_18_2016-EX-4.72-Strategic Alliance Agreement",
+        "doc_id": "cuad-5e8d5209bc59b37d",
+        "num_answerable_questions": 7
+      },
+      {
+        "title": "COOLTECHNOLOGIES,INC_10_25_2017-EX-10.71-Strategic Alliance Agreement",
+        "doc_id": "cuad-70d41f35777a7832",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "CORALGOLDRESOURCES,LTD_05_28_2020-EX-4.1-CONSULTING AGREEMENT",
+        "doc_id": "cuad-7d139ce53ee5a9db",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "CORIOINC_07_20_2000-EX-10.5-LICENSE AND HOSTING AGREEMENT",
+        "doc_id": "cuad-9425f23ae896405b",
+        "num_answerable_questions": 24
+      },
+      {
+        "title": "CURAEGISTECHNOLOGIES,INC_05_26_2010-EX-1-CORPORATE SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-fa4d6b0e97d2f310",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "CUROGROUPHOLDINGSCORP_05_04_2020-EX-10.3-SERVICING AGREEMENT",
+        "doc_id": "cuad-2719ee423c81fa39",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "CYBERIANOUTPOSTINC_07_09_1998-EX-10.13-PROMOTION AGREEMENT",
+        "doc_id": "cuad-58c5d33e69e4bbce",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "CardlyticsInc_20180112_S-1_EX-10.16_11002987_EX-10.16_Maintenance Agreement3",
+        "doc_id": "cuad-27a38fc129a33ba9",
+        "num_answerable_questions": 4
+      },
+      {
+        "title": "CardlyticsInc_20180112_S-1_EX-10.16_11002987_EX-10.16_Maintenance Agreement4",
+        "doc_id": "cuad-cc8f15c23ec2eaa4",
+        "num_answerable_questions": 6
+      },
+      {
+        "title": "CerenceInc_20191002_8-K_EX-10.4_11827494_EX-10.4_Intellectual Property Agreement",
+        "doc_id": "cuad-ab623d65a4f83fd2",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "Cerus Corporation - FIRST AMEND TO SUPPLY AND MANUFACTURING AGREEMENT",
+        "doc_id": "cuad-9fa36f6a0790901e",
+        "num_answerable_questions": 4
+      },
+      {
+        "title": "ChinaRealEstateInformationCorp_20090929_F-1_EX-10.32_4771615_EX-10.32_Content License Agreement",
+        "doc_id": "cuad-6f5cf08d1ecf83aa",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "ClickstreamCorp_20200330_1-A_EX1A-6 MAT CTRCT_12089935_EX1A-6 MAT CTRCT_Development Agreement",
+        "doc_id": "cuad-1789b9af38df3504",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "Columbia Laboratories, (Bermuda) Ltd. - AMEND NO. 2 TO MANUFACTURING AND SUPPLY AGREEMENT",
+        "doc_id": "cuad-c974ae95fa12e339",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "ConformisInc_20191101_10-Q_EX-10.6_11861402_EX-10.6_Development Agreement",
+        "doc_id": "cuad-8512f456bbaa8b10",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "CybergyHoldingsInc_20140520_10-Q_EX-10.27_8605784_EX-10.27_Affiliate Agreement",
+        "doc_id": "cuad-c4f5f17ab74318fc",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "DIVERSINETCORP_03_01_2012-EX-4-RESELLER AGREEMENT",
+        "doc_id": "cuad-98a47eed7b6e7f8f",
+        "num_answerable_questions": 22
+      },
+      {
+        "title": "DOMINIADVISORTRUST_02_18_2005-EX-99.(H)(2)-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-821310421f136070",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "DRAGONSYSTEMSINC_01_08_1999-EX-10.17-OUTSOURCING AGREEMENT",
+        "doc_id": "cuad-4f8d5f5cdce52d52",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "DRIVENDELIVERIES,INC_05_22_2020-EX-10.4-CONSULTING AGREEMENT",
+        "doc_id": "cuad-395b8a165b184989",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "DUOSTECHNOLOGIESGROUP,INC_04_21_2009-EX-10.1-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-6f6700102ddc3b49",
+        "num_answerable_questions": 22
+      },
+      {
+        "title": "DYNAMEXINC_06_06_1996-EX-10.4-TRANSPORTATION SERVICES AGREEMENT",
+        "doc_id": "cuad-edc52fd2596ab3f6",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "DYNTEKINC_07_30_1999-EX-10-ONLINE HOSTING AGREEMENT",
+        "doc_id": "cuad-778d628c7765f556",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "DeltathreeInc_19991102_S-1A_EX-10.19_6227850_EX-10.19_Co-Branding Agreement_ Service Agreement",
+        "doc_id": "cuad-bead4c63d03b8438",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "DigitalCinemaDestinationsCorp_20111220_S-1_EX-10.10_7346719_EX-10.10_Affiliate Agreement",
+        "doc_id": "cuad-07053b16bffa584c",
+        "num_answerable_questions": 27
+      },
+      {
+        "title": "DovaPharmaceuticalsInc_20181108_10-Q_EX-10.2_11414857_EX-10.2_Promotion Agreement",
+        "doc_id": "cuad-93a7191ff01200e8",
+        "num_answerable_questions": 25
+      },
+      {
+        "title": "ELECTRAMECCANICA VEHICLES CORP. - Manufacturing Agreement",
+        "doc_id": "cuad-3e157306bccf9ad7",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "ELFBEAUTY,INC_07_02_2020-EX-10.1-COOPERATION AGREEMENT",
+        "doc_id": "cuad-dc5d05b521660677",
+        "num_answerable_questions": 7
+      },
+      {
+        "title": "EMERALDHEALTHTHERAPEUTICSINC_06_10_2020-EX-4.5-CONSULTING AGREEMENT - DR. GAETANO MORELLO N.D. INC.",
+        "doc_id": "cuad-856621564ef16fb2",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "ENERGOUSCORP_03_16_2017-EX-10.24-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-f4e08224f33fba9b",
+        "num_answerable_questions": 32
+      },
+      {
+        "title": "ENTERPRISEPRODUCTSPARTNERSLP_07_08_1998-EX-10.3-TRANSPORTATION CONTRACT",
+        "doc_id": "cuad-03e9a903a7a78669",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "ENTERTAINMENTGAMINGASIAINC_02_15_2005-EX-10.5-DISTRIBUTOR AGREEMENT",
+        "doc_id": "cuad-19997b1fd7481890",
+        "num_answerable_questions": 21
+      },
+      {
+        "title": "ENTRUSTINC_07_24_1998-EX-10.5-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-32cf40edea783242",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "ETELOS,INC_03_09_2004-EX-10.8-DISTRIBUTOR AGREEMENT",
+        "doc_id": "cuad-e1da37464ba1f2a4",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "EUROPEANMICROHOLDINGSINC_03_06_1998-EX-10.6-DISTRIBUTOR AGREEMENT",
+        "doc_id": "cuad-3a8af2b3f318f5e1",
+        "num_answerable_questions": 21
+      },
+      {
+        "title": "EbixInc_20010515_10-Q_EX-10.3_4049767_EX-10.3_Co-Branding Agreement",
+        "doc_id": "cuad-1f0b266adb8af60a",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "EcoScienceSolutionsInc_20171117_8-K_EX-10.1_10956472_EX-10.1_Endorsement Agreement",
+        "doc_id": "cuad-de5fcca0bce9862f",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "EcoScienceSolutionsInc_20180406_8-K_EX-10.1_11135398_EX-10.1_Sponsorship Agreement",
+        "doc_id": "cuad-c1486d2710f557f4",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "EhaveInc_20190515_20-F_EX-4.44_11678816_EX-4.44_License Agreement_ Reseller Agreement",
+        "doc_id": "cuad-ce6f337203f5b1cd",
+        "num_answerable_questions": 24
+      },
+      {
+        "title": "EmeraldHealthBioceuticalsInc_20200218_1-A_EX1A-6 MAT CTRCT_11987205_EX1A-6 MAT CTRCT_Development Agreement",
+        "doc_id": "cuad-0ff8b745f1e5722e",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "EmmisCommunicationsCorp_20191125_8-K_EX-10.6_11906433_EX-10.6_Marketing Agreement",
+        "doc_id": "cuad-4ebad2520c5ae34c",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "EtonPharmaceuticalsInc_20191114_10-Q_EX-10.1_11893941_EX-10.1_Development Agreement",
+        "doc_id": "cuad-18b41a093cc556dd",
+        "num_answerable_questions": 19
+      },
+      {
+        "title": "ExactSciencesCorp_20180822_8-K_EX-10.1_11331629_EX-10.1_Promotion Agreement",
+        "doc_id": "cuad-5e49174a49f7ddd5",
+        "num_answerable_questions": 22
+      },
+      {
+        "title": "FEDERATEDGOVERNMENTINCOMESECURITIESINC_04_28_2020-EX-99.SERV AGREE-SERVICES AGREEMENT_AMENDMENT",
+        "doc_id": "cuad-3816e40deb2b3ebc",
+        "num_answerable_questions": 5
+      },
+      {
+        "title": "FEDERATEDGOVERNMENTINCOMESECURITIESINC_04_28_2020-EX-99.SERV AGREE-SERVICES AGREEMENT_POWEROF",
+        "doc_id": "cuad-10123f9dd9eff31e",
+        "num_answerable_questions": 6
+      },
+      {
+        "title": "FIBROGENINC_10_01_2014-EX-10.11-COLLABORATION AGREEMENT",
+        "doc_id": "cuad-59a067b32b05550c",
+        "num_answerable_questions": 22
+      },
+      {
+        "title": "FOUNDATIONMEDICINE,INC_02_02_2015-EX-10.2-Collaboration Agreement",
+        "doc_id": "cuad-38b976179a209c87",
+        "num_answerable_questions": 19
+      },
+      {
+        "title": "FTENETWORKS,INC_02_18_2016-EX-99.4-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-2e55ecc57f220700",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "FUSIONPHARMACEUTICALSINC_06_05_2020-EX-10.17-Supply Agreement - FUSION",
+        "doc_id": "cuad-78180bc1fc35bc82",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "Freecook_20180605_S-1_EX-10.3_11233807_EX-10.3_Hosting Agreement",
+        "doc_id": "cuad-b82102d910769eb2",
+        "num_answerable_questions": 6
+      },
+      {
+        "title": "FreezeTagInc_20180411_8-K_EX-10.1_11139603_EX-10.1_Sponsorship Agreement",
+        "doc_id": "cuad-3a531a0e4846719a",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "FuelcellEnergyInc_20191106_8-K_EX-10.1_11868007_EX-10.1_Development Agreement",
+        "doc_id": "cuad-e6eb1cd7db5ecd22",
+        "num_answerable_questions": 21
+      },
+      {
+        "title": "FulucaiProductionsLtd_20131223_10-Q_EX-10.9_8368347_EX-10.9_Content License Agreement",
+        "doc_id": "cuad-3d95ae934a1b0216",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "FuseMedicalInc_20190321_10-K_EX-10.43_11575454_EX-10.43_Distributor Agreement",
+        "doc_id": "cuad-ed1330387f320e25",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "GALACTICOMMTECHNOLOGIESINC_11_07_1997-EX-10.46-WEB HOSTING AGREEMENT",
+        "doc_id": "cuad-288e261b4b527613",
+        "num_answerable_questions": 4
+      },
+      {
+        "title": "GOCALLINC_03_30_2000-EX-10.7-Promotion Agreement",
+        "doc_id": "cuad-a68f8f8cc816f611",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "GOOSEHEADINSURANCE,INC_04_02_2018-EX-10.6-Franchise Agreement",
+        "doc_id": "cuad-c92227514f576d98",
+        "num_answerable_questions": 28
+      },
+      {
+        "title": "GRANTIERRAENERGYINC_05_07_2012-EX-10.6-TRANSPORTATION CONTRACT",
+        "doc_id": "cuad-3c15a3be192ef6a9",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "GRIDIRONBIONUTRIENTS,INC_02_05_2020-EX-10.3-SUPPLY AGREEMENT",
+        "doc_id": "cuad-b90c301632887894",
+        "num_answerable_questions": 6
+      },
+      {
+        "title": "GarrettMotionInc_20181001_8-K_EX-2.4_11364532_EX-2.4_Intellectual Property Agreement",
+        "doc_id": "cuad-48e049de9b2c5357",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "GentechHoldingsInc_20190808_1-A_EX1A-6 MAT CTRCT_11776814_EX1A-6 MAT CTRCT_Distributor Agreement",
+        "doc_id": "cuad-946f075897a223e3",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "GluMobileInc_20070319_S-1A_EX-10.09_436630_EX-10.09_Content License Agreement1",
+        "doc_id": "cuad-bf54232d0e0b4395",
+        "num_answerable_questions": 22
+      },
+      {
+        "title": "GopageCorp_20140221_10-K_EX-10.1_8432966_EX-10.1_Content License Agreement",
+        "doc_id": "cuad-ace1da10584782ab",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "GpaqAcquisitionHoldingsInc_20200123_S-4A_EX-10.6_11951677_EX-10.6_License Agreement",
+        "doc_id": "cuad-18b7bc82178d8198",
+        "num_answerable_questions": 20
+      },
+      {
+        "title": "GpaqAcquisitionHoldingsInc_20200123_S-4A_EX-10.8_11951679_EX-10.8_Service Agreement",
+        "doc_id": "cuad-83b9e77bca01a780",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "HALITRON,INC_03_01_2005-EX-10.15-SPONSORSHIP AND DEVELOPMENT AGREEMENT",
+        "doc_id": "cuad-7dd35c8ca14e5f6a",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "HC2HOLDINGS,INC_05_14_2020-EX-10.1-COOPERATION AGREEMENT",
+        "doc_id": "cuad-a19e7588539a946a",
+        "num_answerable_questions": 7
+      },
+      {
+        "title": "HEALTHGATEDATACORP_11_24_1999-EX-10.1-HOSTING AND MANAGEMENT AGREEMENT - Escrow Agreement",
+        "doc_id": "cuad-1295b04db7d873ce",
+        "num_answerable_questions": 6
+      },
+      {
+        "title": "HERTZGLOBALHOLDINGS,INC_07_07_2016-EX-10.4-INTELLECTUAL PROPERTY AGREEMENT",
+        "doc_id": "cuad-1e6d383a41c823c6",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "HOLIDAYRVSUPERSTORESINC_04_15_2002-EX-10.13-ENDORSEMENT AGREEMENT",
+        "doc_id": "cuad-a95f7799f9dd93aa",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "HOSPITALITYINVESTORSTRUST,INC_04_07_2014-EX-10.26-FRANCHISE AGREEMENT",
+        "doc_id": "cuad-07297b74745f28ee",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "HPILHOLDING_01_07_2015-EX-99.1-COOPERATION AGREEMENT",
+        "doc_id": "cuad-0511073a6e7eccb8",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "HUBEIMINKANGPHARMACEUTICALLTD_09_19_2006-EX-10.1-OUTSOURCING AGREEMENT",
+        "doc_id": "cuad-1bc9ebdd84ff9957",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "HYDRONTECHNOLOGIESINC_03_31_1997-EX-10.47-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-c42b6a69f7fc03f4",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "HYPERIONSOFTWARECORP_09_28_1994-EX-10.47-EXCLUSIVE DISTRIBUTOR AGREEMENT",
+        "doc_id": "cuad-09c2bd40f5d4808b",
+        "num_answerable_questions": 19
+      },
+      {
+        "title": "HarpoonTherapeuticsInc_20200312_10-K_EX-10.18_12051356_EX-10.18_Development Agreement",
+        "doc_id": "cuad-e3e3aa71d6ebfdf1",
+        "num_answerable_questions": 25
+      },
+      {
+        "title": "HealthcareIntegratedTechnologiesInc_20190812_8-K_EX-10.1_11776966_EX-10.1_Reseller Agreement",
+        "doc_id": "cuad-5cc7a791b205e9ac",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "HealthcentralCom_19991108_S-1A_EX-10.27_6623292_EX-10.27_Co-Branding Agreement",
+        "doc_id": "cuad-7b0fb38a916ee6ea",
+        "num_answerable_questions": 19
+      },
+      {
+        "title": "HertzGroupRealtyTrustInc_20190920_S-11A_EX-10.8_11816941_EX-10.8_Trademark License Agreement",
+        "doc_id": "cuad-c771ff8daefca46d",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "ICORECONNECTINC_10_13_2010-EX-7.1-Strategic Alliance Agreement",
+        "doc_id": "cuad-d47a6be9262373b2",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "IGENEBIOTECHNOLOGYINC_05_13_2003-EX-1-JOINT VENTURE AGREEMENT",
+        "doc_id": "cuad-939bb0fd42765110",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "IMAGEWARESYSTEMSINC_12_20_1999-EX-10.22-MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-d93b7cf788e8525e",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "INGEVITYCORP_05_16_2016-EX-10.5-INTELLECTUAL PROPERTY AGREEMENT",
+        "doc_id": "cuad-ee5f47075015afae",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "INKTOMICORP_06_08_1998-EX-10.14-SOFTWARE HOSTING AGREEMENT",
+        "doc_id": "cuad-a17d2705ec7290d3",
+        "num_answerable_questions": 19
+      },
+      {
+        "title": "INNOVIVA,INC_08_07_2014-EX-10.1-COLLABORATION AGREEMENT",
+        "doc_id": "cuad-662a142bef7a2028",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "INTELLIGENTHIGHWAYSOLUTIONS,INC_01_18_2018-EX-10.1-Strategic Alliance Agreement",
+        "doc_id": "cuad-0aa5be47432a0ce2",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "INTERNATIONALFASTFOODCORP_04_04_1997-EX-99-FRANCHISE AGREEMENT",
+        "doc_id": "cuad-086fee515b36caf2",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "INTRICONCORP_03_10_2009-EX-10.22-Strategic Alliance Agreement",
+        "doc_id": "cuad-175f98c64a5fa01a",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "IPAYMENT,INC_05_14_2007-EX-10.1-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-c7256920fc58b74b",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "IVILLAGEINC_03_17_1999-EX-10.16-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-bddaecbe4675533a",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "IbioInc_20200313_8-K_EX-10.1_12052678_EX-10.1_Development Agreement",
+        "doc_id": "cuad-c1396192b42441b6",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "IdeanomicsInc_20151124_8-K_EX-10.2_9354744_EX-10.2_Content License Agreement",
+        "doc_id": "cuad-79daea055062a4db",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "ImperialGardenResortInc_20161028_DRS (on F-1)_EX-10.13_9963189_EX-10.13_Outsourcing Agreement",
+        "doc_id": "cuad-849ca27868180834",
+        "num_answerable_questions": 4
+      },
+      {
+        "title": "InmodeLtd_20190729_F-1A_EX-10.9_11743243_EX-10.9_Manufacturing Agreement",
+        "doc_id": "cuad-39fe21d72db27f48",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "InnerscopeHearingTechnologiesInc_20181109_8-K_EX-10.6_11419704_EX-10.6_Distributor Agreement",
+        "doc_id": "cuad-569ec82cebaf0a42",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "JINGWEIINTERNATIONALLTD_10_04_2007-EX-10.7-INTELLECTUAL PROPERTY AGREEMENT",
+        "doc_id": "cuad-e775fd267715465c",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "JOINTCORP_09_19_2014-EX-10.15-FRANCHISE AGREEMENT",
+        "doc_id": "cuad-464a6b22b8ec27d2",
+        "num_answerable_questions": 25
+      },
+      {
+        "title": "KALLOINC_11_03_2011-EX-10.1-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-cb6befc09617e0e6",
+        "num_answerable_questions": 20
+      },
+      {
+        "title": "KENTUCKYUTILITIESCO_03_25_2003-EX-10.65-TRANSPORTATION AGREEMENT",
+        "doc_id": "cuad-fde3beeb7e175cf7",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "KINGPHARMACEUTICALSINC_08_09_2006-EX-10.1-PROMOTION AGREEMENT",
+        "doc_id": "cuad-c5536304a8b0177c",
+        "num_answerable_questions": 21
+      },
+      {
+        "title": "KIROMICBIOPHARMA,INC_04_08_2020-EX-10.28-JOINT VENTURE AGREEMENT",
+        "doc_id": "cuad-dc59e7975110f61d",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "KIROMICBIOPHARMA,INC_05_11_2020-EX-10.23-CONSULTING AGREEMENT",
+        "doc_id": "cuad-b9d11c50bada2ade",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "KUBIENT,INC_07_02_2020-EX-10.14-MASTER SERVICES AGREEMENT_Part1",
+        "doc_id": "cuad-8cd494dda39dd20c",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "KUBIENT,INC_07_02_2020-EX-10.14-MASTER SERVICES AGREEMENT_Part2",
+        "doc_id": "cuad-da326ff6a9231cde",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "KitovPharmaLtd_20190326_20-F_EX-4.15_11584449_EX-4.15_Manufacturing Agreement",
+        "doc_id": "cuad-b608d86004f95db8",
+        "num_answerable_questions": 21
+      },
+      {
+        "title": "LECLANCHE\u0301 S.A. - JOINT DEVELOPMENT AND MARKETING AGREEMENT",
+        "doc_id": "cuad-b6f629c6c5d2a0f7",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "LEGACYTECHNOLOGYHOLDINGS,INC_12_09_2005-EX-10.2-DISTRIBUTOR AGREEMENT",
+        "doc_id": "cuad-66c342bba9a7969a",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "LEJUHOLDINGSLTD_03_12_2014-EX-10.34-INTERNET CHANNEL COOPERATION AGREEMENT",
+        "doc_id": "cuad-9077f075ca0c2b8a",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "LIMEENERGYCO_09_09_1999-EX-10-DISTRIBUTOR AGREEMENT",
+        "doc_id": "cuad-f71b4149a185d016",
+        "num_answerable_questions": 19
+      },
+      {
+        "title": "LOYALTYPOINTINC_11_16_2004-EX-10.2-RESELLER AGREEMENT",
+        "doc_id": "cuad-b1fe09126a4d0b84",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "LUCIDINC_04_15_2011-EX-10.9-DISTRIBUTOR AGREEMENT",
+        "doc_id": "cuad-ba380182adfa1c5d",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "LeadersonlineInc_20000427_S-1A_EX-10.8_4991089_EX-10.8_Co-Branding Agreement",
+        "doc_id": "cuad-3b032819d672a50e",
+        "num_answerable_questions": 19
+      },
+      {
+        "title": "LegacyEducationAllianceInc_20141110_8-K_EX-10.9_8828866_EX-10.9_Endorsement Agreement",
+        "doc_id": "cuad-3e8bb711b6348e78",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "LegacyEducationAllianceInc_20200330_10-K_EX-10.18_12090678_EX-10.18_Development Agreement",
+        "doc_id": "cuad-e784696663705888",
+        "num_answerable_questions": 24
+      },
+      {
+        "title": "LifewayFoodsInc_20160316_10-K_EX-10.24_9489766_EX-10.24_Endorsement Agreement",
+        "doc_id": "cuad-8183f9b1825b7e7e",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "Loop Industries, Inc. - Marketing Agreement",
+        "doc_id": "cuad-1fd917a3a6cfd78f",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "MACROGENICSINC_08_02_2013-EX-10-COLLABORATION AGREEMENT",
+        "doc_id": "cuad-68e853d5158fbfb4",
+        "num_answerable_questions": 20
+      },
+      {
+        "title": "MACY_S,INC_05_11_2020-EX-99.4-JOINT FILING AGREEMENT",
+        "doc_id": "cuad-9a184dd501fe8861",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "MANAKOASERVICESCORP_11_21_2007-EX-7.5-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-63955679231b3b5f",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "MANUFACTURERSSERVICESLTD_06_05_2000-EX-10.14-OUTSOURCING AGREEMENT",
+        "doc_id": "cuad-53e37eccb9aca397",
+        "num_answerable_questions": 22
+      },
+      {
+        "title": "MARTINMIDSTREAMPARTNERSLP_01_23_2004-EX-10.3-TRANSPORTATION SERVICES AGREEMENT",
+        "doc_id": "cuad-3bb303d7e4828fff",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "MEDALISTDIVERSIFIEDREIT,INC_05_18_2020-EX-10.1-CONSULTING AGREEMENT",
+        "doc_id": "cuad-148893e90dc210d0",
+        "num_answerable_questions": 19
+      },
+      {
+        "title": "MEDIWOUNDLTD_01_15_2014-EX-10.6-SUPPLY AGREEMENT",
+        "doc_id": "cuad-523b4ebe4fc8c72f",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "MEETGROUP,INC_06_29_2017-EX-10.1-COOPERATION AGREEMENT",
+        "doc_id": "cuad-2ef7ad1e760173ae",
+        "num_answerable_questions": 7
+      },
+      {
+        "title": "MERITLIFEINSURANCECO_06_19_2020-EX-10.(XIV)-MASTER SERVICES AGREEMENT",
+        "doc_id": "cuad-a0dfb970cddc367c",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "MFAFINANCIAL,INC_07_06_2020-EX-99.D-JOINT FILING AGREEMENT",
+        "doc_id": "cuad-47d2e78843d621b5",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "MIDDLEBROOKPHARMACEUTICALS,INC_03_18_2010-EX-10.1-PROMOTION AGREEMENT",
+        "doc_id": "cuad-34aa01d34bde52e1",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "MJBIOTECH,INC_12_06_2018-EX-99.01-JOINT VENTURE AGREEMENT",
+        "doc_id": "cuad-b0ba141f18b74964",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "MOELIS_CO_03_24_2014-EX-10.19-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-1f9cab5d8d6e18e6",
+        "num_answerable_questions": 21
+      },
+      {
+        "title": "MOSSIMOINC_04_14_2000-EX-10.14-ENDORSEMENT AGREEMENT",
+        "doc_id": "cuad-90165b6d48d52680",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "MRSFIELDSORIGINALCOOKIESINC_01_29_1998-EX-10-FRANCHISE AGREEMENT",
+        "doc_id": "cuad-7714bf6314a468cd",
+        "num_answerable_questions": 28
+      },
+      {
+        "title": "MTITECHNOLOGYCORP_11_16_2004-EX-10.102-Reseller Agreement Premier Addendum",
+        "doc_id": "cuad-83708d8bd4531de8",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "Magenta Therapeutics, Inc. - Master Development and Manufacturing Agreement",
+        "doc_id": "cuad-fc582f3987872928",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "MetLife, Inc. - Remarketing Agreement",
+        "doc_id": "cuad-5ddae612dc0fc625",
+        "num_answerable_questions": 7
+      },
+      {
+        "title": "Microgenics Corporation - Collaborative Development and Commercialization Agreement",
+        "doc_id": "cuad-2335a929698f9f96",
+        "num_answerable_questions": 21
+      },
+      {
+        "title": "MidwestEnergyEmissionsCorp_20080604_8-K_EX-10.2_3093976_EX-10.2_Content License Agreement",
+        "doc_id": "cuad-d89a8a02f5a91fab",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "MorganStanleyDirectLendingFund_20191119_10-12GA_EX-10.5_11898508_EX-10.5_Trademark License Agreement",
+        "doc_id": "cuad-f0321f48d7dedd90",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "MphaseTechnologiesInc_20030911_10-K_EX-10.15_1560667_EX-10.15_Co-Branding Agreement",
+        "doc_id": "cuad-a03042233d122329",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "N2KINC_10_16_1997-EX-10.16-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-60c7e017fd511769",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "NATIONALPROCESSINGINC_07_18_1996-EX-10.4-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-aa749e27cdd8a962",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "NELNETINC_04_08_2020-EX-1-JOINT FILING AGREEMENT",
+        "doc_id": "cuad-644b67c819fbca9c",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "NEONSYSTEMSINC_03_01_1999-EX-10.5-DISTRIBUTOR AGREEMENT_New",
+        "doc_id": "cuad-244431c03ec9e5f7",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "NETGEAR,INC_04_21_2003-EX-10.16-DISTRIBUTOR AGREEMENT",
+        "doc_id": "cuad-0bb03eb95328a6fb",
+        "num_answerable_questions": 19
+      },
+      {
+        "title": "NETGROCERINC_07_31_1998-EX-10.15-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-c81fa031c7a4ce32",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "NOVOINTEGRATEDSCIENCES,INC_12_23_2019-EX-10.1-JOINT VENTURE AGREEMENT",
+        "doc_id": "cuad-5b81bbf934725583",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "NUVEEN - REMARKETING AGREEMENT",
+        "doc_id": "cuad-932c1d82177f9c1a",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "NeoformaInc_19991202_S-1A_EX-10.26_5224521_EX-10.26_Co-Branding Agreement",
+        "doc_id": "cuad-a7c7a5d7ebe6e91a",
+        "num_answerable_questions": 22
+      },
+      {
+        "title": "NeuroboPharmaceuticalsInc_20190903_S-4_EX-10.36_11802165_EX-10.36_Manufacturing Agreement_ Supply Agreement",
+        "doc_id": "cuad-b26c38227ce11a4e",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "NlsPharmaceuticsLtd_20200228_F-1_EX-10.14_12029046_EX-10.14_Development Agreement",
+        "doc_id": "cuad-2dbaf60bdeb9c4cb",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "NmfSlfIInc_20200115_10-12GA_EX-10.5_11946987_EX-10.5_Trademark License Agreement",
+        "doc_id": "cuad-1bd6afda83d10012",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "OAKTREECAPITALGROUP,LLC_03_02_2020-EX-10.8-Services Agreement",
+        "doc_id": "cuad-a8a77a98c02cb4fb",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "OASYSMOBILE,INC_07_05_2001-EX-10.17-OUTSOURCING AGREEMENT",
+        "doc_id": "cuad-5c17543d13176dae",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "OFGBANCORP_03_28_2007-EX-10.23-OUTSOURCING AGREEMENT",
+        "doc_id": "cuad-3d9c71ed150a6a3c",
+        "num_answerable_questions": 21
+      },
+      {
+        "title": "OLDAPIWIND-DOWNLTD_01_08_2016-EX-1.3-AGENCY AGREEMENT2",
+        "doc_id": "cuad-0ceb15a4c01bcdc7",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "OMINTO,INC_03_29_2004-EX-10-RESELLER AGREEMENT",
+        "doc_id": "cuad-008f7def54b930cc",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "ON4COMMUNICATIONSINC_07_02_2009-EX-10.1-PROMOTION AGREEMENT",
+        "doc_id": "cuad-09bebb14eb9020e6",
+        "num_answerable_questions": 7
+      },
+      {
+        "title": "ONEMAINHOLDINGS,INC_02_20_2020-EX-99.D-JOINT FILING AGREEMENT",
+        "doc_id": "cuad-cdbbcb9c511d8f86",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "OPERALTD_04_30_2020-EX-4.14-SERVICE AGREEMENT",
+        "doc_id": "cuad-2af228a4f8dc66dd",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "ORBSATCORP_08_17_2007-EX-7.3-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-db79294ab677ea45",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "OTISWORLDWIDECORP_04_03_2020-EX-10.4-INTELLECTUAL PROPERTY AGREEMENT by and among UNITED TECHNOLOGIES CORPORATION, OTIS WORLDWIDE CORPORATION and CARRIER ~1",
+        "doc_id": "cuad-833cd44ce66cb3fb",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "PACIFICSYSTEMSCONTROLTECHNOLOGYINC_08_24_2000-EX-10.53-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-4c46375eef4ce254",
+        "num_answerable_questions": 5
+      },
+      {
+        "title": "PACIRA PHARMACEUTICALS, INC. - A_R STRATEGIC LICENSING, DISTRIBUTION AND MARKETING AGREEMENT ",
+        "doc_id": "cuad-0437c16c2d1c56dc",
+        "num_answerable_questions": 24
+      },
+      {
+        "title": "PANDIONTHERAPEUTICSHOLDCOLLC_05_22_2020-EX-10.17-CONSULTING AGREEMENT",
+        "doc_id": "cuad-3d45d712075d7c77",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "PHLVARIABLEINSURANCECOCT_08_17_2009-EX-10.1-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-a4a5f4121b48ebae",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "PLAYAHOTELS_RESORTSNV_03_14_2017-EX-10.22-STRATEGIC ALLIANCE AGREEMENT (Hyatt Ziva Cancun)",
+        "doc_id": "cuad-72468908893d3d6d",
+        "num_answerable_questions": 7
+      },
+      {
+        "title": "PRIMEENERGYRESOURCESCORP_04_02_2007-EX-10.28-COMPLETION AND LIQUIDITY MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-762f17cab63259fd",
+        "num_answerable_questions": 5
+      },
+      {
+        "title": "PROLONGINTERNATIONALCORP_03_23_1998-EX-10.16-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-1f5c20f0d280f986",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "PacificapEntertainmentHoldingsInc_20051115_8-KA_EX-1.01_4300894_EX-1.01_Content License Agreement",
+        "doc_id": "cuad-7d7d7aefdba6c2e4",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "PalmerSquareCapitalBdcInc_20200116_10-12GA_EX-10.6_11949289_EX-10.6_Trademark License Agreement",
+        "doc_id": "cuad-93c45138e5902dd5",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "PapaJohnsInternationalInc_20190617_8-K_EX-10.1_11707365_EX-10.1_Endorsement Agreement",
+        "doc_id": "cuad-2a450f18c7649b3d",
+        "num_answerable_questions": 21
+      },
+      {
+        "title": "PaperexchangeComInc_20000322_S-1A_EX-10.4_5202103_EX-10.4_Co-Branding Agreement",
+        "doc_id": "cuad-6afa2131773253ce",
+        "num_answerable_questions": 23
+      },
+      {
+        "title": "PareteumCorp_20081001_8-K_EX-99.1_2654808_EX-99.1_Hosting Agreement",
+        "doc_id": "cuad-34da057f8e77e67f",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "PcquoteComInc_19990721_S-1A_EX-10.11_6377149_EX-10.11_Co-Branding Agreement1",
+        "doc_id": "cuad-7a7dd7d5823b4de0",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "PcquoteComInc_19990721_S-1A_EX-10.11_6377149_EX-10.11_Co-Branding Agreement3",
+        "doc_id": "cuad-ba5cb3928b075187",
+        "num_answerable_questions": 4
+      },
+      {
+        "title": "PelicanDeliversInc_20200211_S-1_EX-10.3_11975895_EX-10.3_Development Agreement2",
+        "doc_id": "cuad-44f1d3f50efe5a7c",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "PenntexMidstreamPartnersLp_20150416_S-1A_EX-10.4_9042833_EX-10.4_Transportation Agreement",
+        "doc_id": "cuad-c99725e1769bf346",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "PerformanceSportsBrandsInc_20110909_S-1_EX-10.10_7220214_EX-10.10_Endorsement Agreement",
+        "doc_id": "cuad-283dac7b3f89dffe",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "PfHospitalityGroupInc_20150923_10-12G_EX-10.1_9266710_EX-10.1_Franchise Agreement1",
+        "doc_id": "cuad-3c5fc0c180a61191",
+        "num_answerable_questions": 23
+      },
+      {
+        "title": "PfHospitalityGroupInc_20150923_10-12G_EX-10.1_9266710_EX-10.1_Franchise Agreement3",
+        "doc_id": "cuad-a199fc639add44ee",
+        "num_answerable_questions": 7
+      },
+      {
+        "title": "PharmagenInc_20120803_8-KA_EX-10.1_7693204_EX-10.1_Endorsement Agreement",
+        "doc_id": "cuad-6eb2a5ba4acc708e",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "PhasebioPharmaceuticalsInc_20200330_10-K_EX-10.21_12086810_EX-10.21_Development Agreement",
+        "doc_id": "cuad-1bc91c6dfb434b45",
+        "num_answerable_questions": 22
+      },
+      {
+        "title": "PhotronicsInc_20171219_10-QA_EX-10.28_10982650_EX-10.28_Outsourcing Agreement",
+        "doc_id": "cuad-52a251a08f985ea9",
+        "num_answerable_questions": 7
+      },
+      {
+        "title": "PlayboyEnterprisesInc_20090220_10-QA_EX-10.2_4091580_EX-10.2_Content License Agreement_ Marketing Agreement_ Sales-Purchase Agreement1",
+        "doc_id": "cuad-0ec4ad16376c2620",
+        "num_answerable_questions": 26
+      },
+      {
+        "title": "PlayboyEnterprisesInc_20090220_10-QA_EX-10.2_4091580_EX-10.2_Content License Agreement_ Marketing Agreement_ Sales-Purchase Agreement2",
+        "doc_id": "cuad-31bd5abd7e0ecf3e",
+        "num_answerable_questions": 4
+      },
+      {
+        "title": "Principal Life Insurance Company - Broker Dealer Marketing and Servicing Agreement",
+        "doc_id": "cuad-be4b3bf35bf441fe",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "PrudentialBancorpInc_20170606_8-K_EX-10.4_10474434_EX-10.4_Endorsement Agreement",
+        "doc_id": "cuad-dcff65c46f1810fd",
+        "num_answerable_questions": 7
+      },
+      {
+        "title": "Quaker Chemical Corporation - NON COMPETITION AND NON SOLICITATION AGREEMENT",
+        "doc_id": "cuad-312c6a5773358ab9",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "RISEEDUCATIONCAYMANLTD_04_17_2020-EX-4.23-SERVICE AGREEMENT",
+        "doc_id": "cuad-384a4a262a524fa4",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "RMRGROUPINC_01_22_2020-EX-99.1-JOINT FILING AGREEMENT",
+        "doc_id": "cuad-9cb8792292d20588",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "ROCKYMOUNTAINCHOCOLATEFACTORY,INC_12_23_2019-EX-10.2-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-ad9c126c24208578",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "RaeSystemsInc_20001114_10-Q_EX-10.57_2631790_EX-10.57_Co-Branding Agreement",
+        "doc_id": "cuad-4bc7cb5586653c6c",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "RangeResourcesLouisianaInc_20150417_8-K_EX-10.5_9045501_EX-10.5_Transportation Agreement",
+        "doc_id": "cuad-2e0e9ac5be20fc78",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "RareElementResourcesLtd_20171019_SC 13D_EX-99.4_10897534_EX-99.4_Intellectual Property Agreement",
+        "doc_id": "cuad-f43a5d3845682bf8",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "ReedsInc_20191113_10-Q_EX-10.4_11888303_EX-10.4_Development Agreement",
+        "doc_id": "cuad-f40e75d56c20cee8",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "RemarkHoldingsInc_20081114_10-Q_EX-10.24_2895649_EX-10.24_Content License Agreement",
+        "doc_id": "cuad-18573bdb0f550ea4",
+        "num_answerable_questions": 20
+      },
+      {
+        "title": "RevolutionMedicinesInc_20200117_S-1_EX-10.1_11948417_EX-10.1_Development Agreement",
+        "doc_id": "cuad-8535780896bd997d",
+        "num_answerable_questions": 25
+      },
+      {
+        "title": "ReynoldsConsumerProductsInc_20191115_S-1_EX-10.18_11896469_EX-10.18_Supply Agreement",
+        "doc_id": "cuad-833a6bf60bf86cda",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "RgcResourcesInc_20151216_8-K_EX-10.3_9372751_EX-10.3_Franchise Agreement",
+        "doc_id": "cuad-f744ccc252178e2e",
+        "num_answerable_questions": 6
+      },
+      {
+        "title": "RitterPharmaceuticalsInc_20200313_S-4A_EX-10.54_12055220_EX-10.54_Development Agreement",
+        "doc_id": "cuad-3e241e193dc4dffc",
+        "num_answerable_questions": 23
+      },
+      {
+        "title": "SCOUTCAMINC_05_12_2020-EX-10.22-SERVICES AGREEMENT",
+        "doc_id": "cuad-c506c4d241e773f1",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "SEASPINEHOLDINGSCORP_10_10_2018-EX-10.1-SUPPLY AGREEMENT",
+        "doc_id": "cuad-9cd648a0686c616d",
+        "num_answerable_questions": 19
+      },
+      {
+        "title": "SECURIANFUNDSTRUST_05_01_2012-EX-99.28.H.9-NET INVESTMENT INCOME MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-9103ec5afdadf700",
+        "num_answerable_questions": 6
+      },
+      {
+        "title": "SEPARATEACCOUNTIIOFAGL_05_02_2011-EX-99.(J)(4)-UNCONDITIONAL CAPITAL MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-e1ef7844f7d843b4",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "SFGFINANCIALCORP_05_12_2009-EX-10.1-SOFTWARE LICENSE AND MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-e5fb5a011d1d1635",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "SIBANNAC,INC_12_04_2017-EX-2.1-Strategic Alliance Agreement",
+        "doc_id": "cuad-ccb0c5b8abf2ce4a",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "SLOVAKWIRELESSFINANCECOBV_03_28_2001-EX-4.(B)(II).3-Maintenance and support contract for SICAP(R) modules",
+        "doc_id": "cuad-a8b908054ea32a3b",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "SMITHELECTRICVEHICLESCORP_04_04_2012-EX-10.26-FLEET MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-41a0cf3a47fafa44",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "SOLUTIONSVENDINGINTERNATIONAL,INC_03_31_2020-EX1A-1 UNDR AGMT-SERVICES AGREEMENT",
+        "doc_id": "cuad-22f2415a34ef7813",
+        "num_answerable_questions": 5
+      },
+      {
+        "title": "SONUSCORP_03_12_1997-EX-10.11-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-3cb616ccb4501a7f",
+        "num_answerable_questions": 6
+      },
+      {
+        "title": "SPARKLINGSPRINGWATERHOLDINGSLTD_07_03_2002-EX-10.13-SOFTWARE LICENSE AND MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-919d52fbff9ba71a",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "SPIENERGYCO,LTD_03_09_2011-EX-99.5-OPERATIONS AND MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-14007b4c53c2eb30",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "SPIENERGYCO,LTD_07_10_2014-EX-10-Cooperation Agreement of 50MWp Photovoltaic Grid-connected Power Generation Project in Yangqiao of~1",
+        "doc_id": "cuad-58db31225e1bc808",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "SPOKHOLDINGS,INC_06_19_2020-EX-10.1-COOPERATION AGREEMENT",
+        "doc_id": "cuad-89c772eec681c7b2",
+        "num_answerable_questions": 6
+      },
+      {
+        "title": "SPORTHALEYINC_09_29_1997-EX-10.2-10-ENDORSEMENT AGREEMENT",
+        "doc_id": "cuad-30fef39bb426bf81",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "SPRINGBANKPHARMACEUTICALS,INC_04_08_2020-EX-99.A-JOINT FILING AGREEMENT",
+        "doc_id": "cuad-f27fd078b89d2a22",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "STAMPSCOMINC_06_24_1999-EX-10.18-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-522e44eb69d28014",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "STWRESOURCESHOLDINGCORP_08_06_2014-EX-10.1-COOPERATION AGREEMENT",
+        "doc_id": "cuad-9f9a111f46cdf8ad",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "SUCAMPOPHARMACEUTICALS,INC_11_04_2015-EX-10.2-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-17a372af5ef67f3d",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "SUMMAFOURINC_06_19_1998-EX-10.3-SOFTWARE LICENSE AND MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-705f3be834640197",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "SUNTRONCORP_05_17_2006-EX-10.22-MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-02d043ec3ad21998",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "ScansourceInc_20190509_10-Q_EX-10.2_11661422_EX-10.2_Distributor Agreement",
+        "doc_id": "cuad-b28aac1961062ce3",
+        "num_answerable_questions": 5
+      },
+      {
+        "title": "ScansourceInc_20190822_10-K_EX-10.38_11793958_EX-10.38_Distributor Agreement1",
+        "doc_id": "cuad-efa4067d24b291de",
+        "num_answerable_questions": 20
+      },
+      {
+        "title": "ScansourceInc_20190822_10-K_EX-10.38_11793958_EX-10.38_Distributor Agreement2",
+        "doc_id": "cuad-4cf4d965be1b1700",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "SigaTechnologiesInc_20190603_8-K_EX-10.1_11695818_EX-10.1_Promotion Agreement",
+        "doc_id": "cuad-e1ba4f416436d5cc",
+        "num_answerable_questions": 23
+      },
+      {
+        "title": "Sonos, Inc. - Manufacturing Agreement ",
+        "doc_id": "cuad-96943dfc7ec66b62",
+        "num_answerable_questions": 22
+      },
+      {
+        "title": "SoupmanInc_20150814_8-K_EX-10.1_9230148_EX-10.1_Franchise Agreement1",
+        "doc_id": "cuad-4bbecd264e4da147",
+        "num_answerable_questions": 28
+      },
+      {
+        "title": "SoupmanInc_20150814_8-K_EX-10.1_9230148_EX-10.1_Franchise Agreement2",
+        "doc_id": "cuad-64321554354ba066",
+        "num_answerable_questions": 2
+      },
+      {
+        "title": "SoupmanInc_20150814_8-K_EX-10.1_9230148_EX-10.1_Franchise Agreement3",
+        "doc_id": "cuad-a145959ea06a6824",
+        "num_answerable_questions": 2
+      },
+      {
+        "title": "SoupmanInc_20150814_8-K_EX-10.1_9230148_EX-10.1_Franchise Agreement4",
+        "doc_id": "cuad-0950b341fc6e674a",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "StaarSurgicalCompany_20180801_10-Q_EX-10.37_11289449_EX-10.37_Distributor Agreement",
+        "doc_id": "cuad-cbd39c3ba9d4a9ab",
+        "num_answerable_questions": 21
+      },
+      {
+        "title": "StampscomInc_20001114_10-Q_EX-10.47_2631630_EX-10.47_Co-Branding Agreement",
+        "doc_id": "cuad-3261e49cfe11864e",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "TALCOTTRESOLUTIONLIFEINSURANCECO-SEPARATEACCOUNTTWELVE_04_30_2020-EX-99.8(L)-SERVICE AGREEMENT",
+        "doc_id": "cuad-5658f1760d3ba0e0",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "THERAVANCEBIOPHARMA,INC_05_08_2020-EX-10.2-SERVICE AGREEMENT",
+        "doc_id": "cuad-372b2c82b3332ad6",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "TICKETSCOMINC_06_22_1999-EX-10.22-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-56b5d0a5a2cb3a1b",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "TRICITYBANKSHARESCORP_05_15_1998-EX-10-OUTSOURCING AGREEMENT",
+        "doc_id": "cuad-f90ca0d2368f188e",
+        "num_answerable_questions": 19
+      },
+      {
+        "title": "TRIZETTOGROUPINC_08_18_1999-EX-10.17-TECHNICAL INFRASTRUCTURE MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-d75a3ce44e160f7a",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "TRUENORTHENERGYCORP_02_08_2007-EX-10.1-DEVELOPMENT AGREEMENT",
+        "doc_id": "cuad-5cc2bd15d19d1181",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "TUNIUCORP_03_06_2014-EX-10-COOPERATION AGREEMENT",
+        "doc_id": "cuad-ceeb31bdc9b07af4",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "TURNKEYCAPITAL,INC_07_20_2017-EX-1.1-Strategic Alliance Agreement",
+        "doc_id": "cuad-cc2e23b6f9e169e7",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "TcPipelinesLp_20160226_10-K_EX-99.12_9454048_EX-99.12_Transportation Agreement",
+        "doc_id": "cuad-548a4d75e33a2b94",
+        "num_answerable_questions": 7
+      },
+      {
+        "title": "TheglobeComInc_19990503_S-1A_EX-10.20_5416126_EX-10.20_Co-Branding Agreement",
+        "doc_id": "cuad-5a7358c7a5ec5c80",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "ThriventVariableInsuranceAccountB_20190701_N-6_EX-99.D(IV)_11720968_EX-99.D(IV)_Endorsement Agreement",
+        "doc_id": "cuad-3fb820a8548d7818",
+        "num_answerable_questions": 5
+      },
+      {
+        "title": "TubeMediaCorp_20060310_8-K_EX-10.1_513921_EX-10.1_Affiliate Agreement",
+        "doc_id": "cuad-d285567d51c19d5e",
+        "num_answerable_questions": 24
+      },
+      {
+        "title": "UAGHINC_04_14_2004-EX-10.18-MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-668d0467f9c96aa3",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "ULTRAGENYXPHARMACEUTICALINC_12_23_2013-EX-10.9-SUPPLY AGREEMENT",
+        "doc_id": "cuad-79de8c2f84f3effa",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "UNITEDNATIONALBANCORP_03_03_1999-EX-99-Outsourcing Agreement with the BISYS Group, Inc.",
+        "doc_id": "cuad-4a6f6086b4cd804a",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "URSCORPNEW_03_17_2014-EX-99-COOPERATION AGREEMENT",
+        "doc_id": "cuad-119cdf990e93d1c3",
+        "num_answerable_questions": 5
+      },
+      {
+        "title": "USASYNTHETICFUELCORP_10_21_2010-EX-10.10-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-4ee8a3f6293fa9f4",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "UnionDentalHoldingsInc_20050204_8-KA_EX-10_3345577_EX-10_Affiliate Agreement",
+        "doc_id": "cuad-3df779e36d0b0256",
+        "num_answerable_questions": 7
+      },
+      {
+        "title": "UsioInc_20040428_SB-2_EX-10.11_1723988_EX-10.11_Affiliate Agreement 2",
+        "doc_id": "cuad-b1776b127273ac43",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "VALENCETECHNOLOGYINC_02_14_2003-EX-10-JOINT VENTURE CONTRACT",
+        "doc_id": "cuad-8fbd961b0fa8436d",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "VAXCYTE,INC_05_22_2020-EX-10.19-SUPPLY AGREEMENT",
+        "doc_id": "cuad-167958207817288c",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "VEONEER,INC_02_21_2020-EX-10.11-JOINT VENTURE AGREEMENT",
+        "doc_id": "cuad-0084b1ca188dfb5c",
+        "num_answerable_questions": 6
+      },
+      {
+        "title": "VERICELCORP_08_06_2019-EX-10.10-SUPPLY AGREEMENT",
+        "doc_id": "cuad-8925ba97b89d01d0",
+        "num_answerable_questions": 22
+      },
+      {
+        "title": "VERSOTECHNOLOGIESINC_12_28_2007-EX-99.3-INTELLECTUAL PROPERTY AGREEMENT",
+        "doc_id": "cuad-9630dd45654fc0f6",
+        "num_answerable_questions": 5
+      },
+      {
+        "title": "VERTEXENERGYINC_08_14_2014-EX-10.24-OPERATION AND MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-dc81323b5c78f1a0",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "VERTICALNETINC_04_01_2002-EX-10.19-MAINTENANCE AND SUPPORT AGREEMENT",
+        "doc_id": "cuad-b3c48ee5851c9f95",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "VIOLINMEMORYINC_12_12_2012-EX-10.14-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-48d94855afbf6b2e",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "VIRGINGALACTICHOLDINGS,INC_04_08_2020-EX-99.1-JOINT FILING STATEMENT",
+        "doc_id": "cuad-65d0b950d2252831",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "VIRTUALSCOPICS,INC_11_12_2010-EX-10.1-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-efb3cab594b11ecc",
+        "num_answerable_questions": 20
+      },
+      {
+        "title": "VISIUMTECHNOLOGIES,INC_10_20_2004-EX-10.20-DISTRIBUTOR AGREEMENT",
+        "doc_id": "cuad-582033dcba5aa42c",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "VITAMINSHOPPECOMINC_09_13_1999-EX-10.26-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-3c72e4b64adf5fdd",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "VIVINT SOLAR, INC. - NON-COMPETITION AGREEMENT",
+        "doc_id": "cuad-85af4eb5d350f3f2",
+        "num_answerable_questions": 4
+      },
+      {
+        "title": "VertexEnergyInc_20200113_8-K_EX-10.1_11943624_EX-10.1_Marketing Agreement",
+        "doc_id": "cuad-a003628bdf380406",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "VitalibisInc_20180316_8-K_EX-10.2_11100168_EX-10.2_Hosting Agreement",
+        "doc_id": "cuad-90525eeef2e1bb83",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "VnueInc_20150914_8-K_EX-10.1_9259571_EX-10.1_Promotion Agreement",
+        "doc_id": "cuad-a51038ee2b8e13bb",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "WARNINGMANAGEMENTSERVICESINC_12_10_1999-EX-10-ENDORSEMENT AGREEMENT",
+        "doc_id": "cuad-931f49c441fa6ef0",
+        "num_answerable_questions": 19
+      },
+      {
+        "title": "WELLSFARGOMORTGAGEBACKEDSECURITIES2006-6TRUST_05_11_2006-EX-10.3-Yield Maintenance Agreement",
+        "doc_id": "cuad-c53641c5906a016f",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "WESTERN COPPER - NON-COMPETITION AGREEMENT",
+        "doc_id": "cuad-831634f0d7606209",
+        "num_answerable_questions": 7
+      },
+      {
+        "title": "WHITESMOKE,INC_11_08_2011-EX-10.26-PROMOTION AND DISTRIBUTION AGREEMENT",
+        "doc_id": "cuad-43ab152a17a15599",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "WOMENSGOLFUNLIMITEDINC_03_29_2000-EX-10.13-ENDORSEMENT AGREEMENT",
+        "doc_id": "cuad-328284bda76efb98",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "WOMENSGOLFUNLIMITEDINC_03_29_2000-EX-10.13-ENDORSEMENT AGREEMENT - Intellectual Property Rights                 Confidentiality and Non-Use Obligations Agreement",
+        "doc_id": "cuad-83a9e79ee6dd2595",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "WaterNowInc_20191120_10-Q_EX-10.12_11900227_EX-10.12_Distributor Agreement",
+        "doc_id": "cuad-aced24d91b2ef51d",
+        "num_answerable_questions": 19
+      },
+      {
+        "title": "WebmdHealthCorp_20050908_S-1A_EX-10.7_1027007_EX-10.7_Content License Agreement",
+        "doc_id": "cuad-b266e78e01eb9078",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "XENCORINC_10_25_2013-EX-10.24-COLLABORATION AGREEMENT (3)",
+        "doc_id": "cuad-f54f24d1cd691630",
+        "num_answerable_questions": 20
+      },
+      {
+        "title": "ZEBRATECHNOLOGIESCORP_04_16_2014-EX-10.1-INTELLECTUAL PROPERTY AGREEMENT",
+        "doc_id": "cuad-944e0822aba9ea79",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "ZogenixInc_20190509_10-Q_EX-10.2_11663313_EX-10.2_Distributor Agreement",
+        "doc_id": "cuad-5dad919074219d10",
+        "num_answerable_questions": 24
+      },
+      {
+        "title": "ZtoExpressCaymanInc_20160930_F-1_EX-10.10_9752871_EX-10.10_Transportation Agreement",
+        "doc_id": "cuad-28ce8ff7dd227717",
+        "num_answerable_questions": 7
+      }
+    ],
+    "test": [
+      {
+        "title": "AIRTECHINTERNATIONALGROUPINC_05_08_2000-EX-10.4-FRANCHISE AGREEMENT",
+        "doc_id": "cuad-45529f10eeedfc81",
+        "num_answerable_questions": 20
+      },
+      {
+        "title": "ALLIANCEBANCORPINCOFPENNSYLVANIA_10_18_2006-EX-1.2-AGENCY AGREEMENT",
+        "doc_id": "cuad-7786602a2f8ad113",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "AMERICASSHOPPINGMALLINC_12_10_1999-EX-10.2-SITE DEVELOPMENT AND HOSTING AGREEMENT",
+        "doc_id": "cuad-fa1367fe90ccec1d",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "ASIANDRAGONGROUPINC_08_11_2005-EX-10.5-Reseller Agreement",
+        "doc_id": "cuad-bae3ea83bc0b2a06",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "ASPIRITYHOLDINGSLLC_05_07_2012-EX-10.6-OUTSOURCING AGREEMENT",
+        "doc_id": "cuad-82c9be9a95a595e9",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "AURASYSTEMSINC_06_16_2010-EX-10.25-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-8f073bd5d910e811",
+        "num_answerable_questions": 24
+      },
+      {
+        "title": "ArcaUsTreasuryFund_20200207_N-2_EX-99.K5_11971930_EX-99.K5_Development Agreement",
+        "doc_id": "cuad-0ea7bdfca61ea7f2",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "AtnInternationalInc_20191108_10-Q_EX-10.1_11878541_EX-10.1_Maintenance Agreement",
+        "doc_id": "cuad-bb70642fec2aa263",
+        "num_answerable_questions": 20
+      },
+      {
+        "title": "BELLRINGBRANDS,INC_02_07_2020-EX-10.18-MASTER SUPPLY AGREEMENT",
+        "doc_id": "cuad-3a341a04a22f4460",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "BICYCLETHERAPEUTICSPLC_03_10_2020-EX-10.11-SERVICE AGREEMENT",
+        "doc_id": "cuad-2e2becc10a9f3b8f",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "BIOCEPTINC_08_19_2013-EX-10-COLLABORATION AGREEMENT",
+        "doc_id": "cuad-38d317b117205203",
+        "num_answerable_questions": 20
+      },
+      {
+        "title": "BIOPURECORP_06_30_1999-EX-10.13-AGENCY AGREEMENT",
+        "doc_id": "cuad-5414a7fa59ff5eaf",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "BLUEFLYINC_03_27_2002-EX-10.27-e-business Hosting Agreement",
+        "doc_id": "cuad-54998d90c919742e",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "BNLFINANCIALCORP_03_30_2007-EX-10.8-OUTSOURCING AGREEMENT",
+        "doc_id": "cuad-992cc9c47b33aa8b",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "BOLIVARMININGCORP_05_23_2003-EX-2.1-VISP WEB SITE BUILDING AND HOSTING AGREEMENT",
+        "doc_id": "cuad-1460e033ee0e0768",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "BONTONSTORESINC_04_20_2018-EX-99.3-AGENCY AGREEMENT",
+        "doc_id": "cuad-052975b81f9779a6",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "BellringBrandsInc_20190920_S-1_EX-10.12_11817081_EX-10.12_Manufacturing Agreement1",
+        "doc_id": "cuad-eaa4c1a2bed12b46",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "BellringBrandsInc_20190920_S-1_EX-10.12_11817081_EX-10.12_Manufacturing Agreement3",
+        "doc_id": "cuad-bde083b0ad7013d2",
+        "num_answerable_questions": 5
+      },
+      {
+        "title": "BravatekSolutionsInc_20170418_8-K_EX-10.1_10205739_EX-10.1_Reseller Agreement",
+        "doc_id": "cuad-c89c00d4255db785",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "CHAPARRALRESOURCESINC_03_30_2000-EX-10.66-TRANSPORTATION CONTRACT",
+        "doc_id": "cuad-be2cca21cc9440c6",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "CHINARECYCLINGENERGYCORP_11_14_2013-EX-10.6-Cooperation Agreement",
+        "doc_id": "cuad-2546b91ec2afafc9",
+        "num_answerable_questions": 7
+      },
+      {
+        "title": "CardlyticsInc_20180112_S-1_EX-10.16_11002987_EX-10.16_Maintenance Agreement1",
+        "doc_id": "cuad-d108d8a9d1272e86",
+        "num_answerable_questions": 23
+      },
+      {
+        "title": "CardlyticsInc_20180112_S-1_EX-10.16_11002987_EX-10.16_Maintenance Agreement2",
+        "doc_id": "cuad-5e3569c28d1b0b1e",
+        "num_answerable_questions": 2
+      },
+      {
+        "title": "CcRealEstateIncomeFundadv_20181205_POS 8C_EX-99.(H)(3)_11447739_EX-99.(H)(3)_Marketing Agreement",
+        "doc_id": "cuad-2c255d1ae5e54d02",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "CnsPharmaceuticalsInc_20200326_8-K_EX-10.1_12079626_EX-10.1_Development Agreement",
+        "doc_id": "cuad-49d7fac30979a69a",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "CoherusBiosciencesInc_20200227_10-K_EX-10.29_12021376_EX-10.29_Development Agreement",
+        "doc_id": "cuad-3b993cbaf05a6528",
+        "num_answerable_questions": 26
+      },
+      {
+        "title": "CreditcardscomInc_20070810_S-1_EX-10.33_362297_EX-10.33_Affiliate Agreement",
+        "doc_id": "cuad-8fbef19971ef408b",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "CytodynInc_20200109_10-Q_EX-10.5_11941634_EX-10.5_License Agreement",
+        "doc_id": "cuad-c8949cef1e4bce67",
+        "num_answerable_questions": 23
+      },
+      {
+        "title": "DRKOOPCOMINC_04_21_1999-EX-10.28-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-0038374672b578e9",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "DataCallTechnologies_20060918_SB-2A_EX-10.9_944510_EX-10.9_Content License Agreement",
+        "doc_id": "cuad-6f1805357c9f7b03",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "ELANDIAINTERNATIONALINC_04_25_2007-EX-10.21-Outsourcing Agreement",
+        "doc_id": "cuad-9fe0198a26aac0aa",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "ENERGYXXILTD_05_08_2015-EX-10.13-Transportation AGREEMENT",
+        "doc_id": "cuad-9617596867782ef1",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "EdietsComInc_20001030_10QSB_EX-10.4_2606646_EX-10.4_Co-Branding Agreement",
+        "doc_id": "cuad-7d562ab77802d635",
+        "num_answerable_questions": 21
+      },
+      {
+        "title": "ElPolloLocoHoldingsInc_20200306_10-K_EX-10.16_12041700_EX-10.16_Development Agreement",
+        "doc_id": "cuad-6a401fdd698c7c36",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "EmbarkComInc_19991008_S-1A_EX-10.10_6487661_EX-10.10_Co-Branding Agreement",
+        "doc_id": "cuad-3d83d9445a9ed30e",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "EuromediaHoldingsCorp_20070215_10SB12G_EX-10.B(01)_525118_EX-10.B(01)_Content License Agreement",
+        "doc_id": "cuad-99887dec86f3b5b6",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "FEDERATEDGOVERNMENTINCOMESECURITIESINC_04_28_2020-EX-99.SERV AGREE-SERVICES AGREEMENT",
+        "doc_id": "cuad-2d39357b16009e40",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "FEDERATEDGOVERNMENTINCOMESECURITIESINC_04_28_2020-EX-99.SERV AGREE-SERVICES AGREEMENT_SECONDAMENDMENT",
+        "doc_id": "cuad-91484f4706fd3574",
+        "num_answerable_questions": 5
+      },
+      {
+        "title": "FIDELITYNATIONALINFORMATIONSERVICES,INC_08_05_2009-EX-10.3-INTELLECTUAL PROPERTY AGREEMENT",
+        "doc_id": "cuad-ae248d81c03ed8dc",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "FLOTEKINDUSTRIESINCCN_05_09_2019-EX-10.1-SUPPLY AGREEMENT",
+        "doc_id": "cuad-155702e98d337953",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "FerroglobePlc_20150624_F-4A_EX-10.20_9154746_EX-10.20_Outsourcing Agreement",
+        "doc_id": "cuad-7f571b6b15d51fb9",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "GAINSCOINC_01_21_2010-EX-10.41-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-45d4d110b1b20acd",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "GALERATHERAPEUTICS,INC_02_14_2020-EX-99.A-JOINT FILING AGREEMENT",
+        "doc_id": "cuad-36e6af3f275a2468",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "GIGGLESN_HUGS,INC_06_23_2016-EX-10.2-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-5622cb33f0b2168e",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "GLOBALTECHNOLOGIESLTD_06_08_2020-EX-10.16-CONSULTING AGREEMENT",
+        "doc_id": "cuad-5333dbd2b49b37f1",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "GOLDRESOURCECORP_12_11_2008-EX-10.1-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-db01d6c6ecbfc2b8",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "GSITECHNOLOGYINC_11_16_2009-EX-10.2-INTELLECTUAL PROPERTY AGREEMENT between SONY ELECTRONICS INC. and GSI TECHNOLOGY, INC.",
+        "doc_id": "cuad-ca6c7bcb140eb484",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "GSVINC_05_15_1998-EX-10-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-a0dedd234ad9b831",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "GULFSOUTHMEDICALSUPPLYINC_12_24_1997-EX-4-AFFILIATE AGREEMENT",
+        "doc_id": "cuad-461e64fdb7845acc",
+        "num_answerable_questions": 4
+      },
+      {
+        "title": "GWG HOLDINGS, INC. - ORDERLY MARKETING AGREEMENT",
+        "doc_id": "cuad-6fb7f9cda5c3414f",
+        "num_answerable_questions": 7
+      },
+      {
+        "title": "GlobalTechnologiesGroupInc_20050928_10KSB_EX-10.9_4148808_EX-10.9_Content License Agreement",
+        "doc_id": "cuad-58cf851528f16962",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "GluMobileInc_20070319_S-1A_EX-10.09_436630_EX-10.09_Content License Agreement2",
+        "doc_id": "cuad-f8758bf3984a9a43",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "GluMobileInc_20070319_S-1A_EX-10.09_436630_EX-10.09_Content License Agreement3",
+        "doc_id": "cuad-3ded74492247914f",
+        "num_answerable_questions": 5
+      },
+      {
+        "title": "GluMobileInc_20070319_S-1A_EX-10.09_436630_EX-10.09_Content License Agreement4",
+        "doc_id": "cuad-404dc08270372ed1",
+        "num_answerable_questions": 4
+      },
+      {
+        "title": "GridironBionutrientsInc_20171206_8-K_EX-10.1_10972555_EX-10.1_Endorsement Agreement",
+        "doc_id": "cuad-4ece988edce54be5",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "GridironBionutrientsInc_20171206_8-K_EX-10.2_10972556_EX-10.2_Endorsement Agreement",
+        "doc_id": "cuad-08b159d6da17d11d",
+        "num_answerable_questions": 5
+      },
+      {
+        "title": "HEALTHGATEDATACORP_11_24_1999-EX-10.1-HOSTING AND MANAGEMENT AGREEMENT (1)",
+        "doc_id": "cuad-c72abcf3341f1ecf",
+        "num_answerable_questions": 23
+      },
+      {
+        "title": "HEMISPHERX - Sales, Marketing, Distribution, and Supply Agreement",
+        "doc_id": "cuad-805de3405af8105a",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "HerImports_20161018_8-KA_EX-10.14_9765707_EX-10.14_Maintenance Agreement",
+        "doc_id": "cuad-18fe591be4070010",
+        "num_answerable_questions": 5
+      },
+      {
+        "title": "HfEnterprisesInc_20191223_S-1_EX-10.22_11931299_EX-10.22_Development Agreement",
+        "doc_id": "cuad-c77c44703db48f2b",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "IDREAMSKYTECHNOLOGYLTD_07_03_2014-EX-10.39-Cooperation Agreement on Mobile Game Business",
+        "doc_id": "cuad-aa43b2240f866f2f",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "IMMUNOMEDICSINC_08_07_2019-EX-10.1-PROMOTION AGREEMENT",
+        "doc_id": "cuad-a4ab9e59556afbb2",
+        "num_answerable_questions": 21
+      },
+      {
+        "title": "IMPCOTECHNOLOGIESINC_04_15_2003-EX-10.65-JOINT VENTURE AGREEMENT",
+        "doc_id": "cuad-62ad27e757ebb22b",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "INTERSECTENT,INC_05_11_2020-EX-10.1-SUPPLY AGREEMENT",
+        "doc_id": "cuad-47f9d9a418ff3fef",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "IOVANCEBIOTHERAPEUTICS,INC_08_03_2017-EX-10.1-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-ed7bbbd365ed62f9",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "IdeanomicsInc_20160330_10-K_EX-10.26_9512211_EX-10.26_Content License Agreement",
+        "doc_id": "cuad-ae5320fa702a9b1b",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "ImineCorp_20180725_S-1_EX-10.5_11275970_EX-10.5_Distributor Agreement",
+        "doc_id": "cuad-5ce66dde5d5a9c96",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "ImpresseCorp_20000322_S-1A_EX-10.11_5199234_EX-10.11_Co-Branding Agreement",
+        "doc_id": "cuad-538872a519a49c2d",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "IntegrityFunds_20200121_485BPOS_EX-99.E UNDR CONTR_11948727_EX-99.E UNDR CONTR_Service Agreement",
+        "doc_id": "cuad-0c75285488b8ca27",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "IntegrityMediaInc_20010329_10-K405_EX-10.17_2373875_EX-10.17_Co-Branding Agreement",
+        "doc_id": "cuad-307d0ee49dd87dd8",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "InvendaCorp_20000828_S-1A_EX-10.2_2588206_EX-10.2_Co-Branding Agreement",
+        "doc_id": "cuad-a08094c0e438a7a9",
+        "num_answerable_questions": 23
+      },
+      {
+        "title": "IpassInc_20181203_8-K_EX-99.1_11445874_EX-99.1_Reseller Agreement",
+        "doc_id": "cuad-81d305cced16ded0",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "KNOWLABS,INC_08_15_2005-EX-10-INTELLECTUAL PROPERTY AGREEMENT",
+        "doc_id": "cuad-6e866a92136cf291",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "LIGHTBRIDGECORP_11_23_2015-EX-10.26-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-a8a6b271f8c74109",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "LOGANSROADHOUSEINC_03_27_1998-EX-10.17-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-dfcd9076ef84133e",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "LOOKSMARTLTD_07_20_2012-EX-99.(D)(I)-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-552bef1e02725b86",
+        "num_answerable_questions": 7
+      },
+      {
+        "title": "LejuHoldingsLtd_20140121_DRS (on F-1)_EX-10.26_8473102_EX-10.26_Content License Agreement1",
+        "doc_id": "cuad-4b26012ee988caac",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "LejuHoldingsLtd_20140121_DRS (on F-1)_EX-10.26_8473102_EX-10.26_Content License Agreement2",
+        "doc_id": "cuad-27a62533d7bd644b",
+        "num_answerable_questions": 4
+      },
+      {
+        "title": "LinkPlusCorp_20050802_8-K_EX-10_3240252_EX-10_Affiliate Agreement",
+        "doc_id": "cuad-0556ac8375017003",
+        "num_answerable_questions": 14
+      },
+      {
+        "title": "LiquidmetalTechnologiesInc_20200205_8-K_EX-10.1_11968198_EX-10.1_Development Agreement",
+        "doc_id": "cuad-8d72630b2e1bb26b",
+        "num_answerable_questions": 23
+      },
+      {
+        "title": "LohaCompanyltd_20191209_F-1_EX-10.16_11917878_EX-10.16_Supply Agreement",
+        "doc_id": "cuad-ca4dc24929a89667",
+        "num_answerable_questions": 6
+      },
+      {
+        "title": "MARSHALLHOLDINGSINTERNATIONAL,INC_04_14_2004-EX-10.15-ENDORSEMENT AGREEMENT",
+        "doc_id": "cuad-e30f171a3c366579",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "MERCATAINC_03_09_2000-EX-10.21-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-2f896dd070bc5b73",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "MOVADOGROUPINC_04_30_2003-EX-10.28-ENDORSEMENT AGREEMENT",
+        "doc_id": "cuad-c1b586444564ef64",
+        "num_answerable_questions": 6
+      },
+      {
+        "title": "MPLXLP_06_17_2015-EX-10.1-TRANSPORTATION SERVICES AGREEMENT",
+        "doc_id": "cuad-ba3981810566e103",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "MSCIINC_02_28_2008-EX-10.10-",
+        "doc_id": "cuad-b23e52c141778c32",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "Monsanto Company - SECOND A_R EXCLUSIVE AGENCY AND MARKETING AGREEMENT ",
+        "doc_id": "cuad-412f6a035ef9763e",
+        "num_answerable_questions": 24
+      },
+      {
+        "title": "MusclepharmCorp_20170208_10-KA_EX-10.38_9893581_EX-10.38_Co-Branding Agreement",
+        "doc_id": "cuad-057117f7cc2d2748",
+        "num_answerable_questions": 23
+      },
+      {
+        "title": "NANOPHASETECHNOLOGIESCORP_11_01_2005-EX-99.1-DISTRIBUTOR AGREEMENT",
+        "doc_id": "cuad-7e99b075927d54c5",
+        "num_answerable_questions": 20
+      },
+      {
+        "title": "NEOMEDIATECHNOLOGIESINC_12_15_2005-EX-16.1-DISTRIBUTOR AGREEMENT",
+        "doc_id": "cuad-6ce86f2d74fe8392",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "NEONSYSTEMSINC_03_01_1999-EX-10.5-DISTRIBUTOR AGREEMENT_Amendment",
+        "doc_id": "cuad-43f1872596fe57d5",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "NETGEAR,INC_04_21_2003-EX-10.16- AMENDMENT #2 TO THE DISTRIBUTION AGREEMENT",
+        "doc_id": "cuad-eb2ba6f9bdc15445",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "NETGEAR,INC_04_21_2003-EX-10.16-AMENDMENT TO THE DISTRIBUTOR AGREEMENT BETWEEN INGRAM MICRO AND NETGEAR",
+        "doc_id": "cuad-d4545ba70b8c1db8",
+        "num_answerable_questions": 5
+      },
+      {
+        "title": "NETZEEINC_11_14_2002-EX-10.3-MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-0667f7c262c10ed6",
+        "num_answerable_questions": 6
+      },
+      {
+        "title": "NEXSTARFINANCEHOLDINGSINC_03_27_2002-EX-10.26-OUTSOURCING AGREEMENT",
+        "doc_id": "cuad-c8411fa149515f8f",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "NICELTD_06_26_2003-EX-4.5-OUTSOURCING AGREEMENT",
+        "doc_id": "cuad-fa78e70381574a6b",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "NYLIACVARIABLEANNUITYSEPARATEACCOUNTIII_04_10_2020-EX-99.8.KK-SERVICE AGREEMENT",
+        "doc_id": "cuad-cd518e7eb45b3114",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "NakedBrandGroupInc_20150731_POS AM (on S-1)_EX-10.75_9196027_EX-10.75_Endorsement Agreement",
+        "doc_id": "cuad-d39bf71d3da2729a",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "OLDAPIWIND-DOWNLTD_01_08_2016-EX-1.3-AGENCY AGREEMENT1",
+        "doc_id": "cuad-b2e45a281d3c4da8",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "ON2TECHNOLOGIES,INC_11_17_2006-EX-10.3-SUPPORT AND MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-62bba5e846f0bfe7",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "OPTIMIZEDTRANSPORTATIONMANAGEMENT,INC_07_26_2000-EX-6.6-DISTRIBUTOR AGREEMENT",
+        "doc_id": "cuad-11558902190eca9e",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "PAXMEDICA,INC_07_02_2020-EX-10.12-Master Service Agreement",
+        "doc_id": "cuad-7380e4f05fde902b",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "PFSFUNDS_06_26_2020-EX-99.H OTH MAT CONT-SERVICES AGREEMENT",
+        "doc_id": "cuad-366e8ae65a826d13",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "PHREESIA,INC_05_28_2019-EX-10.18-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-5f6ec32397cc0053",
+        "num_answerable_questions": 20
+      },
+      {
+        "title": "PRECIGEN,INC_01_22_2020-EX-99.1-JOINT FILING AGREEMENT",
+        "doc_id": "cuad-e3356e730e6b66be",
+        "num_answerable_questions": 2
+      },
+      {
+        "title": "PREMIERBIOMEDICALINC_05_14_2020-EX-10.2-INTELLECTUAL PROPERTY AGREEMENT",
+        "doc_id": "cuad-b7eccef93568a887",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "PROFOUNDMEDICALCORP_08_29_2019-EX-4.5-SUPPLY AGREEMENT",
+        "doc_id": "cuad-917704f7f60e6bc7",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "ParatekPharmaceuticalsInc_20170505_10-KA_EX-10.29_10323872_EX-10.29_Outsourcing Agreement",
+        "doc_id": "cuad-790f71dd8323fc62",
+        "num_answerable_questions": 22
+      },
+      {
+        "title": "PcquoteComInc_19990721_S-1A_EX-10.11_6377149_EX-10.11_Co-Branding Agreement2",
+        "doc_id": "cuad-53d4f937ea917671",
+        "num_answerable_questions": 4
+      },
+      {
+        "title": "PelicanDeliversInc_20200211_S-1_EX-10.3_11975895_EX-10.3_Development Agreement1",
+        "doc_id": "cuad-7cb521f0998056d8",
+        "num_answerable_questions": 2
+      },
+      {
+        "title": "PhoenixNewMediaLtd_20110421_F-1_EX-10.17_6958322_EX-10.17_Content License Agreement",
+        "doc_id": "cuad-fb750025530706a8",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "PrecheckHealthServicesInc_20200320_8-K_EX-99.2_12070169_EX-99.2_Distributor Agreement",
+        "doc_id": "cuad-4594891ad8085d9c",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "QBIOMEDINC_04_08_2020-EX-99.1-JOINT FILING AGREEMENT",
+        "doc_id": "cuad-385382819bb17b21",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "QIWI_06_16_2017-EX-99.(D)(2)-COOPERATION AGREEMENT",
+        "doc_id": "cuad-db86f08c195a23df",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "QuantumGroupIncFl_20090120_8-K_EX-99.2_3672910_EX-99.2_Hosting Agreement",
+        "doc_id": "cuad-a7d69f00423ae893",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "REGANHOLDINGCORP_03_31_2008-EX-10-LICENSE AND HOSTING AGREEMENT",
+        "doc_id": "cuad-9735b45c171e5a9a",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "REWALKROBOTICSLTD_07_10_2014-EX-10.2-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-df92260381191894",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "RUBIOSRESTAURANTSINC_03_31_2008-EX-10.75-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-992e83ac17be7812",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "RandWorldwideInc_20010402_8-KA_EX-10.2_2102464_EX-10.2_Co-Branding Agreement",
+        "doc_id": "cuad-a61d1afb24089060",
+        "num_answerable_questions": 20
+      },
+      {
+        "title": "Reinsurance Group of America, Incorporated - A_R REMARKETING  AGREEMENT",
+        "doc_id": "cuad-af0c461736141d54",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "ReynoldsConsumerProductsInc_20200121_S-1A_EX-10.22_11948918_EX-10.22_Service Agreement",
+        "doc_id": "cuad-fca73dd7b89c2e57",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "SANDRIDGEENERGYINC_08_06_2009-EX-10.6-OPERATIONS AND MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-187c7fa693b76ee3",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "SENMIAOTECHNOLOGYLTD_02_19_2019-EX-10.5-Collaboration Agreement",
+        "doc_id": "cuad-1202642f6f508143",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "SLINGERBAGINC_05_27_2020-EX-10.7-CONSULTING AGREEMENT",
+        "doc_id": "cuad-4dec9f284717d01e",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "SPHERE3DCORP_06_24_2020-EX-10.12-CONSULTING AGREEMENT",
+        "doc_id": "cuad-909e5c6dc8154270",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "STARTECGLOBALCOMMUNICATIONSCORP_11_16_1998-EX-10.30-CONSTRUCTION AND MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-5928d94781ebdc22",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "SYKESHEALTHPLANSERVICESINC_04_24_1998-EX-10.14-OUTSOURCING AGREEMENT",
+        "doc_id": "cuad-b31bae9abcf996aa",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "SalesforcecomInc_20171122_10-Q_EX-10.1_10961535_EX-10.1_Reseller Agreement",
+        "doc_id": "cuad-a77793be32723e54",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "ScansourceInc_20190822_10-K_EX-10.39_11793959_EX-10.39_Distributor Agreement",
+        "doc_id": "cuad-19eef6315928cbe3",
+        "num_answerable_questions": 4
+      },
+      {
+        "title": "SightLife Surgical, Inc. - STRATEGIC SALES _ MARKETING AGREEMENT",
+        "doc_id": "cuad-5959c7235bff2770",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "SimplicityEsportsGamingCompany_20181130_8-K_EX-10.1_11444071_EX-10.1_Franchise Agreement",
+        "doc_id": "cuad-cd2be7e59974ecb8",
+        "num_answerable_questions": 17
+      },
+      {
+        "title": "SmartRxSystemsInc_20180914_1-A_EX1A-6 MAT CTRCT_11351705_EX1A-6 MAT CTRCT_Distributor Agreement",
+        "doc_id": "cuad-9634271427f15268",
+        "num_answerable_questions": 16
+      },
+      {
+        "title": "SouthernStarEnergyInc_20051202_SB-2A_EX-9_801890_EX-9_Affiliate Agreement",
+        "doc_id": "cuad-e66ac0b5ebbf34c3",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "SteelVaultCorp_20081224_10-K_EX-10.16_3074935_EX-10.16_Affiliate Agreement",
+        "doc_id": "cuad-98917be3bdbcf792",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "TALLGRASSENERGY,LP_02_20_2020-EX-99.26-JOINT FILING AGREEMENT",
+        "doc_id": "cuad-e9d93d5cc336d72c",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "TEARDROPGOLFCO_10_23_1996-EX-10.12-ENDORSEMENT AGREEMENT",
+        "doc_id": "cuad-519c110a09563278",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "TELEGLOBEINTERNATIONALHOLDINGSLTD_03_29_2004-EX-10.10-CONSTRUCTION AND MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-739e9fe31f062bec",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "TELKOMSALTD_01_30_2003-EX-10-LICENCE AND MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-1c861a61e6cf58c3",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "TRANSMONTAIGNEPARTNERSLLC_03_13_2020-EX-10.9-SERVICES AGREEMENT",
+        "doc_id": "cuad-8509116dc4bc6640",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "TRANSPHORM,INC_02_14_2020-EX-10.12(1)-JOINT VENTURE AGREEMENT",
+        "doc_id": "cuad-c1d38c5a7a05b88b",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "TodosMedicalLtd_20190328_20-F_EX-4.10_11587157_EX-4.10_Marketing Agreement_ Reseller Agreement",
+        "doc_id": "cuad-b5d5ab251d32dc4d",
+        "num_answerable_questions": 23
+      },
+      {
+        "title": "TomOnlineInc_20060501_20-F_EX-4.46_749700_EX-4.46_Co-Branding Agreement",
+        "doc_id": "cuad-53a659c8def87507",
+        "num_answerable_questions": 24
+      },
+      {
+        "title": "UpjohnInc_20200121_10-12G_EX-2.6_11948692_EX-2.6_Manufacturing Agreement_ Supply Agreement",
+        "doc_id": "cuad-66e33fbe68d40812",
+        "num_answerable_questions": 24
+      },
+      {
+        "title": "VAPOTHERM, INC. - Manufacturing and Supply Agreement",
+        "doc_id": "cuad-4ae6fb819cc7c213",
+        "num_answerable_questions": 15
+      },
+      {
+        "title": "VARIABLESEPARATEACCOUNT_04_30_2014-EX-13.C-UNCONDITIONAL CAPITAL MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-4de2a01fdfd9dbbe",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "VNUE,INC_07_10_2015-EX-10.1-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-a89b080315badbac",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "VerizonAbsLlc_20200123_8-K_EX-10.4_11952335_EX-10.4_Service Agreement",
+        "doc_id": "cuad-298ded523eb4fd77",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "VgrabCommunicationsInc_20200129_10-K_EX-10.33_11958828_EX-10.33_Development Agreement",
+        "doc_id": "cuad-4b3ab13baa7a3376",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "VirtuosoSurgicalInc_20191227_1-A_EX1A-6 MAT CTRCT_11933379_EX1A-6 MAT CTRCT_License Agreement",
+        "doc_id": "cuad-e3d1778756b1582d",
+        "num_answerable_questions": 18
+      },
+      {
+        "title": "WARNERCHILCOTTPLC_12_31_2003-EX-4.36-DEVELOPMENT AGREEMENT",
+        "doc_id": "cuad-188837957586a685",
+        "num_answerable_questions": 8
+      },
+      {
+        "title": "WASTE2ENERGYHOLDINGS,INC_06_03_2010-EX-10.2-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-072ab0f0229f8c5f",
+        "num_answerable_questions": 10
+      },
+      {
+        "title": "WEBHELPCOMINC_03_22_2000-EX-10.8-HOSTING AGREEMENT",
+        "doc_id": "cuad-303fb6bc7259a12d",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "WORLDWIDESTRATEGIESINC_11_02_2005-EX-10-RESELLER AGREEMENT",
+        "doc_id": "cuad-a91e388682f55304",
+        "num_answerable_questions": 23
+      },
+      {
+        "title": "WPPPLC_04_30_2020-EX-4.28-SERVICE AGREEMENT",
+        "doc_id": "cuad-5a9b45fb0f14159a",
+        "num_answerable_questions": 13
+      },
+      {
+        "title": "WatchitMediaInc_20061201_8-K_EX-10.1_4148672_EX-10.1_Content License Agreement",
+        "doc_id": "cuad-ba668c474707318d",
+        "num_answerable_questions": 6
+      },
+      {
+        "title": "WestPharmaceuticalServicesInc_20200116_8-K_EX-10.1_11947529_EX-10.1_Supply Agreement",
+        "doc_id": "cuad-4bef9e55002e004e",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "XACCT Technologies, Inc.SUPPORT AND MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-3e004e91c97ab01b",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "XLITECHNOLOGIES,INC_12_02_2015-EX-10.02-STRATEGIC ALLIANCE AGREEMENT",
+        "doc_id": "cuad-a37346f8108e8c8c",
+        "num_answerable_questions": 5
+      },
+      {
+        "title": "XLITECHNOLOGIES,INC_12_11_2015-EX-10.1-Sponsorship Agreement",
+        "doc_id": "cuad-8a44582c744e2c0d",
+        "num_answerable_questions": 9
+      },
+      {
+        "title": "XYBERNAUTCORP_07_12_2002-EX-4-SPONSORSHIP AGREEMENT",
+        "doc_id": "cuad-14ede5cfbef72b32",
+        "num_answerable_questions": 11
+      },
+      {
+        "title": "XinhuaSportsEntertainmentLtd_20070221_F-1_EX-99.4_645553_EX-99.4_Content License Agreement",
+        "doc_id": "cuad-6c4f6cf4c4d5ccec",
+        "num_answerable_questions": 12
+      },
+      {
+        "title": "XpresspaGroupInc_20190401_10-K_EX-10.28_11599457_EX-10.28_Marketing Agreement",
+        "doc_id": "cuad-646f2847afd01a81",
+        "num_answerable_questions": 23
+      },
+      {
+        "title": "ZONDWINDSYSTEMPARTNERSLTDSERIES85-B_04_03_2006-EX-10-MANAGEMENT AND MAINTENANCE AGREEMENT",
+        "doc_id": "cuad-70da8100b51e39b4",
+        "num_answerable_questions": 3
+      },
+      {
+        "title": "Zounds Hearing, Inc. - MANUFACTURING DESIGN MARKETING AGREEMENT",
+        "doc_id": "cuad-8d308ffce7c83efb",
+        "num_answerable_questions": 18
+      }
+    ]
+  },
+  "provenance": {
+    "config": {
+      "split": {
+        "salt": "lexis-eval-v1",
+        "fractions": {
+          "dev": 0.7,
+          "test": 0.3
+        }
+      },
+      "pin_dev_first_n": 10
+    },
+    "config_hash": "d5c6cec707e00f7f82195877b50cfc49893fb1224d609976b7429bbb56123d23",
+    "git_sha": "1d13d15f9d536f827b700b58b896b0f77e8b6003",
+    "data_sha256": {
+      "data/cuad_raw/CUAD_v1/CUAD_v1.json": "ed0b77d85bdf4014d7495800e8e4a70565b48ee6f8a2e5dca9cf8655dbf10eae"
+    },
+    "data_missing": [],
+    "package_versions": {},
+    "extra": {}
+  }
+}

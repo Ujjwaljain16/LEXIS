@@ -1,0 +1,64 @@
+name: us_contracts
+description: US commercial contracts (CUAD / LegalBench-RAG) plus US case-law citations.
+languages: [en]
+
+bm25:
+  lowercase: true
+  stopwords: en
+
+citation_grammars:
+  - name: us_reports
+    pattern: '\d{1,3}\s+U\.S\.\s+\d{1,4}'
+    examples: ["347 U.S. 483"]
+    non_examples: ["347 US 483", "many U.S. cases"]
+    description: United States Reports (Bluebook).
+  - name: federal_reporter
+    pattern: '\d{1,3}\s+F\.(?:2d|3d|4th)\s+\d{1,4}'
+    examples: ["123 F.3d 456", "88 F.2d 12"]
+  - name: us_code
+    pattern: '\d{1,2}\s+U\.S\.C\.\s+§\s*\d+[a-z]?'
+    examples: ["15 U.S.C. § 78j", "17 U.S.C. §106"]
+
+structure:
+  levels: [contract, article, section, clause]
+  chunk_strategy: clause
+  parent_context_template: "{title} > {path}"
+
+feature_schema_ref: contract
+
+prompts:
+  system: >-
+    You are a precise legal document analyst. Answer only from the provided context and cite
+    every factual claim using the provided citation keys.
+  refusal: I cannot answer this from the provided documents.
+  insufficient_marker: INSUFFICIENT_CONTEXT
+
+trusted_sources:
+  law.cornell.edu: 0.98
+  congress.gov: 0.95
+  supremecourt.gov: 1.0
+  federalregister.gov: 0.95
+  sec.gov: 1.0
+
+court_hierarchy: [supreme_court, courts_of_appeals, district_courts]
+
+temporal:
+  as_of_supported: false
+
+validity_phrases:
+  en: [overruled, reversed, distinguished, followed, superseded]
+
+models:
+  embedder: bge-m3
+  reranker: bge-reranker-v2-m3
+  nli: nli-deberta-v3-base
+  llm: gemini-flash
+
+corpus_adapters: [cuad, caselaw_access_project]
+eval_datasets: [cuad, legalbench_rag, mleb_us]
+
+compliance:
+  - source: CUAD
+    requirement: Confirm the dataset licence and required attribution before any redistribution.
+  - source: Caselaw Access Project
+    requirement: Released CC0; no attribution obligation, keep provenance metadata anyway.

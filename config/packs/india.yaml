@@ -1,0 +1,73 @@
+name: india
+description: Indian Supreme Court / High Court judgments and central statutes (English first, Indic languages stretch).
+languages: [en, hi]
+
+bm25:
+  lowercase: true
+  stopwords: en
+
+citation_grammars:
+  - name: air
+    pattern: 'AIR\s+\d{4}\s+[A-Za-z]{2,10}\s+\d{1,5}'
+    examples: ["AIR 1973 SC 1461", "AIR 1950 Bom 1"]
+    non_examples: ["AIR 1973", "the air was cold"]
+    description: All India Reporter citation.
+  - name: scc
+    pattern: '\(\d{4}\)\s+\d{1,3}\s+SCC\s+\d{1,5}'
+    examples: ["(1973) 4 SCC 225"]
+    non_examples: ["4 SCC 225"]
+    description: Supreme Court Cases citation.
+  - name: neutral_insc
+    pattern: '\d{4}\s+INSC\s+\d{1,5}'
+    examples: ["2023 INSC 1", "2024 INSC 512"]
+    non_examples: ["INSC 2023"]
+    description: Supreme Court neutral citation (2023 onwards).
+
+structure:
+  levels: [act, chapter, section, sub_section, proviso]
+  chunk_strategy: paragraph
+  parent_context_template: "{title} > {path}"
+
+prompts:
+  system: >-
+    You are a careful legal research assistant for Indian law. Answer only from the provided
+    context, cite every claim with the provided citation keys, and say when the context is insufficient.
+  refusal: I cannot answer this from the provided documents.
+  insufficient_marker: INSUFFICIENT_CONTEXT
+
+trusted_sources:
+  sci.gov.in: 1.0
+  indiacode.nic.in: 1.0
+  indiankanoon.org: 0.85
+
+court_hierarchy: [supreme_court, high_courts, district_courts, tribunals]
+
+temporal:
+  as_of_supported: false
+  territories: [india]
+
+validity_phrases:
+  en: [overruled, distinguished, followed, affirmed, per incuriam]
+
+models:
+  embedder: bge-m3
+  reranker: bge-reranker-v2-m3
+  nli: nli-deberta-v3-base
+  llm: gemini-flash
+
+corpus_adapters: [open_justice_india_hc, india_code]
+eval_datasets: [il_tur_prior_case_retrieval, il_tur_statute_identification, ailqa, india_gold]
+
+compliance:
+  - source: IL-TUR
+    requirement: CC-BY-NC-SA 4.0 - evaluation only; never redistribute or use commercially.
+    blocks_redistribution: true
+    blocks_commercial_use: true
+  - source: AILQA
+    requirement: CC BY-NC-ND - evaluation only.
+    blocks_redistribution: true
+    blocks_commercial_use: true
+  - source: Indian Kanoon API
+    requirement: A "Powered by IKanoon" attribution is required whenever results feed a RAG system or fine-tune.
+  - source: Open Justice India High Court judgments
+    requirement: CC-BY-4.0 - attribute the source.

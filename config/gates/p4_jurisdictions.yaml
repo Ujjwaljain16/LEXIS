@@ -1,0 +1,20 @@
+# P4: the same pipeline across jurisdiction packs.
+phase: p4_jurisdictions
+description: Each pack beats its own baseline, and adding a pack needs no core-code edits.
+split: test
+status: provisional
+criteria:
+  - id: us_contracts_recall30_gain
+    metric: us_contracts.recall@30
+    type: relative_gain
+  - id: india_recall30_gain
+    metric: india.recall@30
+    type: relative_gain
+  - id: uk_eu_statutes_recall30_gain
+    metric: uk_eu_statutes.recall@30
+    type: relative_gain
+  - id: third_pack_core_lines_changed
+    metric: third_pack_core_lines_changed
+    type: absolute_max
+    threshold: 0
+    description: Adding the third pack must not touch core code.
