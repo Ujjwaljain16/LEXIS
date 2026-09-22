@@ -6,6 +6,7 @@ import os
 from fastapi import APIRouter, Request, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
+from lexis.config import settings
 from lexis.serving.models import BaseLexisResponse, DeepModeEnqueueRequest, JobState
 from lexis.serving.telemetry import LexisTracer, get_trace_id
 from lexis.serving.redis_manager import RedisManager
@@ -40,13 +41,20 @@ def get_qdrant_client():
         qdrant_client_instance = LexisQdrantClient()
     return qdrant_client_instance
 
-async def fetch_chunk(chunk_id: str) -> Candidate:
+async def fetch_chunk(doc_id: str, chunk_index: int) -> Candidate:
+    """Looks up a chunk by its document-relative position. Chunk ids are content-derived
+    hashes (see Chunk.create), so neighbours must be found by (doc_id, chunk_index) payload
+    match rather than by id."""
     qdrant = get_qdrant_client()
-    records = await qdrant.get_points("primary_v2", [chunk_id])
+    records = await qdrant.find_by_payload(
+        settings.qdrant_collection_primary,
+        {"doc_id": doc_id, "chunk_index": chunk_index},
+        limit=1,
+    )
     if records:
         rec = records[0]
         return Candidate(
-            chunk_id=rec.id,
+            chunk_id=rec.payload.get("chunk_id") or str(rec.id),
             score=1.0,
             source_path=rec.payload.get("source_file", ""),
             metadata=rec.payload,
@@ -100,7 +108,13 @@ async def query_fast(req: DeepModeEnqueueRequest, request: Request):
                 for c in reranked_chunks:
                     c_obj = Candidate(
                         chunk_id=c.get("payload", {}).get("chunk_id", ""),
-                        score=c.get("cross_encoder_score", 0.0),
+                        # ContextAssembler.rerank_only writes the CrossEncoder score under
+                        # "_relevance_score" (see generation/context_assembler.py), not
+                        # "cross_encoder_score" -- that key is never produced here. -999.0
+                        # matches ContextAssembler's own sentinel for "no score computed"
+                        # (used when its reranker failed to load), so a missing score isn't
+                        # mistaken for a real low-but-valid CrossEncoder value.
+                        score=c.get("_relevance_score", -999.0),
                         source_path=c.get("payload", {}).get("source_file", ""),
                         metadata=c.get("payload", {}),
                         content=c.get("payload", {}).get("content", "")

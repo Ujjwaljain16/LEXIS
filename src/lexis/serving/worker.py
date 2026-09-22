@@ -2,55 +2,143 @@ import asyncio
 import logging
 import json
 import time
-from typing import Dict, Any
+from typing import Dict, Any, List, Protocol, AsyncGenerator, Optional, Callable
 
 from lexis.serving.models import JobState
 from lexis.serving.telemetry import LexisTracer
 from lexis.serving.redis_manager import RedisManager
 from lexis.evaluation.cost_ledger import CostLedger, ResearchBudget
-from lexis.retrieval.hybrid_retriever import RetrievalEngine
-from lexis.generation.context_assembler import ContextAssembler
-from lexis.verification.judge_dep import filter_by_elements
-from lexis.reranking.map_reduce_filter import map_reduce_deep_mode
-from lexis.generation.synthesizer import LexisSynthesizer
-from lexis.retrieval.adapters import flatten_research_graph
-from lexis.reranking.sentence_window import SentenceWindowExpansion
-from lexis.generation.crag_router import route_crag
-from lexis.retrieval.interfaces import Candidate
-from lexis.indexing.qdrant_client import LexisQdrantClient
 from lexis.config import settings
+from lexis.retrieval.interfaces import Candidate
 
 logger = logging.getLogger(__name__)
+
+# --- Protocol Definitions ---
+
+class RetrievalProcessor(Protocol):
+    async def retrieve(self, query: str, top_k_per_path: int, top_n_rrf: int) -> List[Dict[str, Any]]: ...
+
+class ContextAssemblerProcessor(Protocol):
+    def rerank_only(self, query: str, candidates: List[Dict[str, Any]], top_k: int) -> List[Dict[str, Any]]: ...
+
+class VerificationProcessor(Protocol):
+    async def filter_by_elements(self, query: str, chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]: ...
+
+class ExpansionProcessor(Protocol):
+    async def transform(self, query: str, candidates: List[Candidate]) -> List[Candidate]: ...
+
+class MapReduceProcessor(Protocol):
+    async def run(self, session_id: str, query: str, subqueries: List[str], chunks: List[Dict[str, Any]], budget: Any, model: str) -> Any: ...
+
+class GraphFlattenProcessor(Protocol):
+    def flatten(self, session: Any) -> Any: ...
+
+class CragRouterProcessor(Protocol):
+    async def route(self, query: str, candidates: List[Dict[str, Any]], max_score: float) -> List[Dict[str, Any]]: ...
+
+class SynthesizerProcessor(Protocol):
+    async def stream_answer(self, query: str, context: Any) -> AsyncGenerator[str, None]: ...
+
+class IngestionProcessor(Protocol):
+    async def ingest_document(self, file_path: str, doc_id: str, progress_callback: Callable[[str], Any]): ...
+
+class StateStoreProcessor(Protocol):
+    async def initialize_schema(self): ...
+    async def update_ingestion_job_state(self, job_id: str, state: str, error_message: str = None, increment_retry: bool = False): ...
+
+
+# --- Dummy Implementations ---
+
+class DummyRetrievalProcessor:
+    async def retrieve(self, query: str, top_k_per_path: int, top_n_rrf: int) -> List[Dict[str, Any]]:
+        await asyncio.sleep(0.5)
+        return [{"score": 0.9, "rrf_score": 0.8, "payload": {"chunk_id": "dummy-1", "content": "dummy"}}]
+
+class DummyContextAssembler:
+    def rerank_only(self, query: str, candidates: List[Dict[str, Any]], top_k: int) -> List[Dict[str, Any]]:
+        return candidates
+
+class DummyVerificationProcessor:
+    async def filter_by_elements(self, query: str, chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        await asyncio.sleep(0.1)
+        return chunks
+
+class DummyExpansionProcessor:
+    async def transform(self, query: str, candidates: List[Candidate]) -> List[Candidate]:
+        return candidates
+
+class DummyMapReduceProcessor:
+    async def run(self, session_id: str, query: str, subqueries: List[str], chunks: List[Dict[str, Any]], budget: Any, model: str) -> Any:
+        await asyncio.sleep(1.0)
+        return {"flattened_graph": True}
+
+class DummyGraphFlattenProcessor:
+    def flatten(self, session: Any) -> Any:
+        return session
+
+class DummyCragRouterProcessor:
+    async def route(self, query: str, candidates: List[Dict[str, Any]], max_score: float) -> List[Dict[str, Any]]:
+        return candidates
+
+class DummySynthesizerProcessor:
+    async def stream_answer(self, query: str, context: Any) -> AsyncGenerator[str, None]:
+        for word in ["This", " is", " a", " dummy", " response."]:
+            await asyncio.sleep(0.1)
+            yield word
+
+class DummyIngestionProcessor:
+    async def ingest_document(self, file_path: str, doc_id: str, progress_callback: Callable[[str], Any]):
+        states = ["PARSING", "CHUNKING", "INDEXING", "COMPLETED"]
+        # Trigger an artificial failure condition for testing DLQ and retries
+        if "fail_me" in file_path:
+            raise RuntimeError("Intentional failure triggered for testing retries.")
+            
+        for state in states:
+            # We await the callback since the original code does so. 
+            result = progress_callback(state)
+            if asyncio.iscoroutine(result):
+                await result
+            await asyncio.sleep(0.2)
+
+class NullStateStore:
+    async def initialize_schema(self):
+        pass
+    async def update_ingestion_job_state(self, job_id: str, state: str, error_message: str = None, increment_retry: bool = False):
+        try:
+            logger.info(f"[NullStateStore] Job {job_id} -> {state} {error_message or ''}")
+        except Exception:
+            logger.warning(f"[NullStateStore] Failed to log state update for {job_id}.")
+
+
+# --- Worker Architectures ---
 
 class DeepModeWorker:
     """
     Standalone worker for consuming Lexis Deep Mode tasks from Redis Streams.
     Provides Consumer Group semantics, DLQ, Telemetry, and Hard Budget Enforcement.
     """
-    def __init__(self, redis_manager: RedisManager):
+    def __init__(self, 
+                 redis_manager: RedisManager,
+                 engine: RetrievalProcessor = None,
+                 assembler: ContextAssemblerProcessor = None,
+                 synthesizer: SynthesizerProcessor = None,
+                 verifier: VerificationProcessor = None,
+                 expander: ExpansionProcessor = None,
+                 map_reducer: MapReduceProcessor = None,
+                 graph_flattener: GraphFlattenProcessor = None,
+                 crag_router: CragRouterProcessor = None):
         self.redis = redis_manager
         self.max_retries = 3
-        self.engine = RetrievalEngine()
-        self.assembler = ContextAssembler()
-        self.synthesizer = LexisSynthesizer()
-        self.qdrant = LexisQdrantClient()
-        self.sentence_expander = SentenceWindowExpansion(
-            fetch_chunk_fn=self._fetch_chunk, 
-            window_size=1
-        )
-
-    async def _fetch_chunk(self, chunk_id: str) -> Candidate:
-        records = await self.qdrant.get_points("primary_v2", [chunk_id])
-        if records:
-            rec = records[0]
-            return Candidate(
-                chunk_id=rec.id,
-                score=1.0,
-                source_path=rec.payload.get("source_file", ""),
-                metadata=rec.payload,
-                content=rec.payload.get("content", "")
-            )
-        return None
+        
+        # Inject dependencies, falling back to Dummies if none provided.
+        self.engine = engine or DummyRetrievalProcessor()
+        self.assembler = assembler or DummyContextAssembler()
+        self.synthesizer = synthesizer or DummySynthesizerProcessor()
+        self.verifier = verifier or DummyVerificationProcessor()
+        self.expander = expander or DummyExpansionProcessor()
+        self.map_reducer = map_reducer or DummyMapReduceProcessor()
+        self.graph_flattener = graph_flattener or DummyGraphFlattenProcessor()
+        self.crag_router = crag_router or DummyCragRouterProcessor()
 
     async def initialize(self):
         """Create the consumer group."""
@@ -144,8 +232,8 @@ class DeepModeWorker:
                 # 1. Retrieve & RRF
                 candidates = await self.engine.retrieve(
                     query, 
-                    top_k_per_path=settings.deep_mode_top_k, 
-                    top_n_rrf=settings.deep_mode_rrf_candidates
+                    top_k_per_path=settings.retrieval_top_k_per_path, 
+                    top_n_rrf=settings.retrieval_fusion_top_k
                 )
                 ledger.stop_timer("retrieval")
                 
@@ -155,18 +243,18 @@ class DeepModeWorker:
                 max_score = candidates[0].get("rrf_score", 0.0) if candidates else 0.0
                 if max_score == 0.0 and candidates and "score" in candidates[0]:
                     max_score = candidates[0]["score"]
-                candidates = await route_crag(query, candidates, max_score)
+                candidates = await self.crag_router.route(query, candidates, max_score)
 
                 ledger.start_timer("rerank")
                 # 2. Rerank Only
-                reranked_chunks = self.assembler.rerank_only(query, candidates, top_k=settings.deep_mode_top_k)
+                reranked_chunks = self.assembler.rerank_only(query, candidates, top_k=settings.retrieval_top_k_per_path)
                 ledger.stop_timer("rerank")
                 
                 if await self._check_stop_conditions(job_id, ledger): return
                 
                 ledger.start_timer("verification")
                 # 3. JudgeDEP on Top K only
-                verified_chunks = await filter_by_elements(query, reranked_chunks)
+                verified_chunks = await self.verifier.filter_by_elements(query, reranked_chunks)
                 ledger.stop_timer("verification")
                 
                 if await self._check_stop_conditions(job_id, ledger): return
@@ -183,7 +271,7 @@ class DeepModeWorker:
                     )
                     candidates_to_expand.append(c_obj)
                     
-                expanded_candidates = await self.sentence_expander.transform(query, candidates_to_expand)
+                expanded_candidates = await self.expander.transform(query, candidates_to_expand)
                 
                 # Convert back to dict expected by map_reduce
                 final_chunks = []
@@ -196,13 +284,13 @@ class DeepModeWorker:
                 ledger.start_timer("generation")
                 # 4. Map Reduce execution
                 subqueries = [query] # Simplified for POC
-                session = await map_reduce_deep_mode(
+                session = await self.map_reducer.run(
                     session_id=job_id,
                     query=query,
                     subqueries=subqueries,
                     chunks=final_chunks,
                     budget=budget,
-                    model=settings.llm_model
+                    model=settings.openai_model_synthesis
                 )
                 ledger.stop_timer("generation")
                 
@@ -213,7 +301,7 @@ class DeepModeWorker:
                 
                 ledger.start_timer("synthesis")
                 # 5. Graph Flattening & Final Synthesis
-                flattened_context = flatten_research_graph(session)
+                flattened_context = self.graph_flattener.flatten(session)
                 
                 # We want to yield tokens here to PubSub!
                 # LexisSynthesizer stream_answer is an async generator
@@ -260,20 +348,18 @@ class DeepModeWorker:
             
         return False
 
-from lexis.ingestion.pipeline import IngestionPipeline
-from lexis.indexing.pg_client import PostgresClient
 
 class IngestionWorker:
     """
     Standalone worker for consuming Lexis Ingestion tasks from Redis Streams.
     Provides Consumer Group semantics, Exponential Backoff, DLQ, and Job State tracking.
     """
-    def __init__(self, redis_manager: RedisManager):
+    def __init__(self, redis_manager: RedisManager, pipeline: IngestionProcessor = None, pg: StateStoreProcessor = None):
         self.redis = redis_manager
         self.max_retries = 3
-        # Single instance pipeline reused for all jobs (avoiding repeated init costs)
-        self.pipeline = IngestionPipeline()
-        self.pg = PostgresClient()
+        # Use injected dependencies or Dummies
+        self.pipeline = pipeline or DummyIngestionProcessor()
+        self.pg = pg or NullStateStore()
 
     async def initialize(self):
         """Create the consumer group."""

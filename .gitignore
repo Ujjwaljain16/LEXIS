@@ -18,6 +18,10 @@ htmlcov/
 .env
 .env.*
 
+# Downloaded/generated benchmark data and evaluation output (not source)
+data/
+evaluation/reports/
+
 # Editor and system files
 .vscode/
 .idea/

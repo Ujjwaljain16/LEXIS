@@ -42,7 +42,8 @@ class LexisSynthesizer:
         
         try:
             stream = await acompletion(
-                model=settings.llm_model,
+                model=settings.gemini_model_synthesis,
+                api_key=settings.gemini_api_key,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}

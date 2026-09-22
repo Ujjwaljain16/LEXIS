@@ -23,7 +23,7 @@ class RedisEvidenceSummaryCache(EvidenceSummaryCache):
         try:
             raw = await self.client.get(self._key(chunk_id, query_hash))
             if raw:
-                return CachedEvidence.parse_raw(raw)
+                return CachedEvidence.model_validate_json(raw)
         except Exception as e:
             logger.error(f"Redis get failed: {e}")
         return None

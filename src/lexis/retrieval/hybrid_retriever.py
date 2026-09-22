@@ -1,23 +1,38 @@
 import asyncio
 import logging
+from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
 
 from lexis.config import settings
 from lexis.indexing.qdrant_client import LexisQdrantClient
-from lexis.indexing.es_client import LexisElasticsearchClient
+from lexis.indexing.bm25_index import LexisBM25Index
 from lexis.ingestion.embedder import BGEM3Embedder
 from lexis.retrieval.fusion import apply_rrf
 from lexis.retrieval.interfaces import Candidate
 
 logger = logging.getLogger(__name__)
 
+
+@dataclass
+class RetrievalTrace:
+    """Per-stage intermediate results from a single retrieve_with_trace()
+    call, for retrieval error analysis (see evaluation/diagnostics.py).
+    Purely diagnostic -- nothing reads this during normal retrieval."""
+    query: str
+    dense_candidates: List[Candidate]    # Path B raw results, in returned rank order
+    bm25_candidates: List[Candidate]     # Path D raw results, in returned rank order
+    fused_candidates: List[Candidate]    # full RRF-sorted list, BEFORE the top_n_rrf cutoff
+    final_chunks: List[dict]             # identical shape/content to retrieve()'s return value
+    top_n_rrf: int
+
 class RetrievalEngine:
     """
     Week 1-2 Foundation Retriever.
-    Executes Path B (Global Dense) and Path D (BM25) concurrently, fusing with RRF.
+    Executes Path B (Global Dense) and Path D (BM25, via bm25s -- see docs/ADR.md
+    ADR-003) concurrently, fusing with RRF.
     """
     def __init__(self):
-        self.es = LexisElasticsearchClient()
+        self.bm25 = LexisBM25Index(index_dir=settings.bm25_index_dir)
         self.qdrant = LexisQdrantClient()
         self.embedder = BGEM3Embedder()
         self.timeout_sec = 2.0  # 2 second max per path
@@ -48,9 +63,11 @@ class RetrievalEngine:
         return candidates
 
     async def _path_d_bm25(self, query_text: str, top_k: int) -> List[Candidate]:
-        """Searches Elasticsearch with BM25."""
+        """Searches the local bm25s index (see docs/ADR.md ADR-003). bm25s is
+        synchronous/CPU-bound, so it runs in a worker thread to avoid blocking
+        the event loop under concurrent requests."""
         try:
-            hits = await self.es.search(query_text, size=top_k)
+            hits = await asyncio.to_thread(self.bm25.search, query_text, top_k)
             candidates = []
             for h in hits:
                 candidates.append(Candidate(
@@ -62,7 +79,7 @@ class RetrievalEngine:
                 ))
             return candidates
         except Exception as e:
-            logger.error(f"ES search failed: {e}")
+            logger.error(f"BM25 search failed: {e}")
             return []
 
     async def retrieve(self, query: str, top_k_per_path: int = 15, top_n_rrf: int = 15) -> List[dict]:
@@ -99,5 +116,54 @@ class RetrievalEngine:
                 "payload": c.metadata,
                 "text": c.content
             })
-            
+
         return final_chunks
+
+    async def retrieve_with_trace(self, query: str, top_k_per_path: int = 15, top_n_rrf: int = 15) -> RetrievalTrace:
+        """
+        Diagnostic variant of retrieve() for retrieval error analysis. Calls
+        the exact same per-path methods and the exact same apply_rrf fusion,
+        with the same parameters, as retrieve() -- it does not change
+        retrieval behavior or ordering, only exposes the intermediate
+        per-stage results retrieve() computes internally but discards.
+
+        Deliberately does NOT share a code path with retrieve() (some
+        duplication below), so that retrieve()'s existing, already-verified
+        baseline behavior is not touched by adding this method. See
+        tests/unit/test_hybrid_retriever_trace.py for confirmation that both
+        methods produce identical final_chunks for the same inputs.
+        """
+        top_k_per_path = top_k_per_path or settings.retrieval_top_k_per_path
+
+        query_emb = self.embedder.embed_text(query).tolist()
+
+        task_b = self._safe_execute(self._path_b_global(query_emb, top_k_per_path), "Path B (Global)")
+        task_d = self._safe_execute(self._path_d_bm25(query, top_k_per_path), "Path D (BM25)")
+
+        res_b, res_d = await asyncio.gather(task_b, task_d)
+
+        candidate_lists = []
+        if res_b: candidate_lists.append(res_b)
+        if res_d: candidate_lists.append(res_d)
+
+        fused = apply_rrf(candidate_lists, k=settings.rrf_k)
+
+        final_chunks = []
+        for c in fused[:top_n_rrf]:
+            final_chunks.append({
+                "id": c.chunk_id,
+                "score": c.score,
+                "rrf_score": c.score,
+                "source_path": c.source_path,
+                "payload": c.metadata,
+                "text": c.content
+            })
+
+        return RetrievalTrace(
+            query=query,
+            dense_candidates=res_b,
+            bm25_candidates=res_d,
+            fused_candidates=fused,
+            final_chunks=final_chunks,
+            top_n_rrf=top_n_rrf,
+        )

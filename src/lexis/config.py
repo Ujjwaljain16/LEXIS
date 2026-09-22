@@ -14,17 +14,29 @@ class Settings(BaseSettings):
 
     # Vector Store
     qdrant_url: str = "http://localhost:6333"
+    qdrant_api_key: str = ""  # required for Qdrant Cloud; empty for a local/unauthenticated instance
+    qdrant_timeout_s: int = 60  # a remote/free-tier cluster needs more than the client's short default
     qdrant_collection_primary: str = "chunks_primary"
     qdrant_collection_hype: str = "hype_questions"
     qdrant_collection_propositions: str = "propositions"
     qdrant_collection_clusters: str = "clusters"
 
-    # Search
+    # Search (legacy Elasticsearch client -- see docs/ADR.md ADR-003; no longer
+    # used by the live retrieval/ingestion path, kept only so es_client.py
+    # remains importable for anyone still using it directly)
     elasticsearch_url: str = "http://localhost:9200"
     elasticsearch_index: str = "chunks_bm25"
 
+    # BM25 keyword search (ADR-003: replaces Elasticsearch for Path D)
+    bm25_index_dir: str = "data/bm25_index"
+
     # Redis (for future worker queues, kept for compatibility)
     redis_url: str = "redis://localhost:6379/0"
+
+    # Postgres (citation storage). pg_client.py also checks the real
+    # POSTGRES_URL process environment variable first, for deployments that
+    # set it directly rather than via .env.
+    postgres_url: str = "postgresql://postgres:postgres@localhost:5432/postgres"
 
     # Retrieval
     rrf_k: int = 61

@@ -12,6 +12,7 @@ import hashlib
 from typing import List
 from qdrant_client.http import models
 
+from lexis.config import settings
 from lexis.indexing.schema import Chunk, ChunkMetadata
 from lexis.ingestion.parser import LexisParser
 from lexis.ingestion.embedder import BGEM3Embedder
@@ -19,7 +20,7 @@ from lexis.ingestion.chunker import SemanticChunker
 from lexis.ingestion.feature_extractor import FeatureExtractor
 from lexis.indexing.raptor import LexisRaptor
 from lexis.indexing.qdrant_client import LexisQdrantClient
-from lexis.indexing.es_client import LexisElasticsearchClient
+from lexis.indexing.bm25_index import LexisBM25Index
 from lexis.indexing.pg_client import PostgresClient, CitationReference, BoundingBox
 
 from lexis.ingestion.interfaces import BaseParser, BaseChunker, BaseEmbedder
@@ -31,9 +32,9 @@ class IngestionPipeline:
         self.chunker = chunker if chunker is not None else SemanticChunker(embedder=self.embedder)
         self.feature_extractor = FeatureExtractor()
         self.raptor = LexisRaptor(embedder=self.embedder)
-        
+
         self.qdrant = LexisQdrantClient()
-        self.es = LexisElasticsearchClient()
+        self.bm25 = LexisBM25Index(index_dir=settings.bm25_index_dir)
         self.pg = PostgresClient()
 
     def _deterministic_uuid(self, string_id: str) -> str:
@@ -77,23 +78,33 @@ class IngestionPipeline:
                 id=self._deterministic_uuid(c.chunk_id),
                 vector=emb.tolist(),
                 payload={
-                    "chunk_id": c.chunk_id, 
-                    "doc_id": c.doc_id, 
-                    "content": c.raw_content, 
+                    "chunk_id": c.chunk_id,
+                    "doc_id": c.doc_id,
+                    "content": c.raw_content,
                     "page_num": c.metadata.page_num,
-                    "doc_type": c.metadata.document_type
+                    "doc_type": c.metadata.document_type,
+                    "chunk_index": c.split_idx
                 }
             ))
 
         # Upsert Qdrant
-        if primary_points: 
-            from lexis.config import settings
+        if primary_points:
             await self.qdrant.upsert_chunks(settings.qdrant_collection_primary, primary_points)
-        
-        # Upsert ES
+
+        # Upsert BM25 (ADR-003: local bm25s index, replaces Elasticsearch)
         if chunks:
-            es_docs = [{"chunk_id": c.chunk_id, "doc_id": c.doc_id, "content": c.raw_content, "doc_type": c.metadata.document_type, "source_file": c.metadata.source_file} for c in chunks]
-            await self.es.index_documents(es_docs)
+            bm25_docs = [
+                {
+                    "chunk_id": c.chunk_id,
+                    "doc_id": c.doc_id,
+                    "content": c.raw_content,
+                    "doc_type": c.metadata.document_type,
+                    "source_file": c.metadata.source_file,
+                    "chunk_index": c.split_idx,
+                }
+                for c in chunks
+            ]
+            self.bm25.add_documents(bm25_docs)
             
         # Upsert Postgres Citations
         await self.pg.initialize_schema()

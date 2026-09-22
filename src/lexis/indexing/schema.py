@@ -14,11 +14,20 @@ Expected Impact on Metrics:
 """
 import hashlib
 import uuid
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 from pydantic import BaseModel, Field
+from dataclasses import dataclass
 
 # Using DNS namespace for deterministic UUID5 generation
 LEXIS_NAMESPACE = uuid.NAMESPACE_DNS
+
+@dataclass
+class DomainFeatureResult:
+    data: dict
+    failed: bool
+    error_type: Optional[str]
+    error_message: Optional[str]
+    schema_version: str
 
 class ChunkMetadata(BaseModel):
     source_file: str
@@ -27,6 +36,11 @@ class ChunkMetadata(BaseModel):
     
     # LegalGraphRAG / Feature Extraction fields
     document_type: str = "unknown"
+    feature_data: Optional[Dict[str, Any]] = None
+    feature_extraction_failed: bool = False
+    feature_extraction_version: str = "v1"
+    
+    # Kept for backward compatibility or direct access, but feature_data is preferred
     parties: List[str] = Field(default_factory=list)
     obligations: List[str] = Field(default_factory=list)
     conditions: List[str] = Field(default_factory=list)
@@ -45,6 +59,12 @@ class Chunk(BaseModel):
     @property
     def content(self) -> str:
         return self.expanded_content if self.expanded_content else self.raw_content
+
+    @property
+    def pqac_key(self) -> str:
+        """The citation key the LLM must cite. It is the chunk id itself
+        (pqac-<full uuid5>), so a valid citation is exactly a valid chunk id."""
+        return self.chunk_id
 
     @classmethod
     def create(cls, doc_id: str, split_idx: int, raw_content: str, metadata: ChunkMetadata) -> "Chunk":

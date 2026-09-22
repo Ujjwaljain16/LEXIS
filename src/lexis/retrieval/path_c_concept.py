@@ -17,7 +17,7 @@ class ConceptRoutingRetrieval:
     def __init__(self):
         self.qdrant = LexisQdrantClient()
         self.embedder = BGEM3Embedder()
-        self.collection_name = "propositions_v2"
+        self.collection_name = settings.qdrant_collection_propositions
 
     async def retrieve(self, query_text: str, top_k: int) -> List[Any]:
         try:
