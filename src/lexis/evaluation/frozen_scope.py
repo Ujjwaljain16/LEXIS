@@ -31,5 +31,5 @@ def load_frozen_scope(frozen_cfg: Mapping[str, Any], cuad_path: str
         chunks_by_doc[doc_id] = chunks
         chunk_by_id.update({c.chunk_id: c for c in chunks})
 
-    cases, _ = CUADAdapter().build_cases(raw, chunks_by_doc, frozen_cfg["contracts"], frozen_cfg["questions"])
+    cases, _ = CUADAdapter().build_cases(raw, chunks_by_doc, contracts, frozen_cfg["questions"])
     return [c for c in cases if c.has_chunk_level_ground_truth()], chunks_by_doc, chunk_by_id

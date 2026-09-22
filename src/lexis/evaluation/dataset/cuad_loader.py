@@ -116,13 +116,25 @@ class CUADAdapter:
         self,
         raw: Dict[str, Any],
         chunks_by_doc_id: Dict[str, List[Chunk]],
-        num_contracts: int,
+        contracts: List[Dict[str, Any]],
         max_total_questions: int,
     ) -> Tuple[List[BenchmarkCase], List[Dict[str, Any]]]:
+        """
+        contracts: the exact, already-selected list of raw CUAD contract
+            dicts to build cases from (case order affects which cases
+            survive the max_total_questions cutoff). This adapter makes no
+            assumption about how the subset was chosen -- pass
+            select_contracts(raw, n) for a simple first-N-by-title subset,
+            or dataset/cuad_split.py's contracts_for_split(raw, manifest,
+            split) for a specific dev/test split. Previously this method
+            re-derived the contract list itself via
+            select_contracts(raw, num_contracts), which meant every caller
+            could only ever evaluate a title-sorted PREFIX of the dataset --
+            never an arbitrary subset such as a hash-based test split.
+        """
         if max_total_questions <= 0:
             raise ValueError("max_total_questions must be positive.")
 
-        contracts = select_contracts(raw, num_contracts)
         cases: List[BenchmarkCase] = []
         unmapped: List[Dict[str, Any]] = []
 

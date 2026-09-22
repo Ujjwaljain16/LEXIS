@@ -272,7 +272,7 @@ async def run_cuad_hard_miss_diagnostics(
             chunk_by_id[c.chunk_id] = c
         logger.info(f"  -> {len(chunks)} chunks")
 
-    cases, unmapped = CUADAdapter().build_cases(raw, chunks_by_doc_id, num_contracts, max_questions)
+    cases, unmapped = CUADAdapter().build_cases(raw, chunks_by_doc_id, contracts, max_questions)
     logger.info(f"Built {len(cases)} scoreable benchmark cases; {len(unmapped)} unmapped.")
 
     if not cases:

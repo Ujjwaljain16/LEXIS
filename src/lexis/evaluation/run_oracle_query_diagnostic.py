@@ -192,7 +192,7 @@ async def run_cuad_oracle_query_diagnostic(
             chunk_by_id[c.chunk_id] = c
         logger.info(f"  -> {len(chunks)} chunks")
 
-    cases, unmapped = CUADAdapter().build_cases(raw, chunks_by_doc_id, num_contracts, max_questions)
+    cases, unmapped = CUADAdapter().build_cases(raw, chunks_by_doc_id, contracts, max_questions)
     logger.info(f"Built {len(cases)} scoreable benchmark cases; {len(unmapped)} unmapped.")
     if not cases:
         logger.error("No scoreable benchmark cases were produced. Cannot run the oracle query diagnostic.")

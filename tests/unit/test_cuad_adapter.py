@@ -134,7 +134,7 @@ def test_build_cases_produces_generic_cases_with_correct_identity():
     raw = valid_raw_dataset()
     chunks_by_doc_id = _chunks_for(raw)
 
-    cases, unmapped = CUADAdapter().build_cases(raw, chunks_by_doc_id, num_contracts=2, max_total_questions=50)
+    cases, unmapped = CUADAdapter().build_cases(raw, chunks_by_doc_id, contracts=select_contracts(raw, 2), max_total_questions=50)
 
     assert unmapped == []
     assert len(cases) == 2  # the is_impossible Termination question is excluded
@@ -150,7 +150,7 @@ def test_build_cases_produces_generic_cases_with_correct_identity():
 
 def test_cuad_specific_fields_do_not_leak_outside_metadata():
     raw = valid_raw_dataset()
-    cases, _ = CUADAdapter().build_cases(raw, _chunks_for(raw), num_contracts=2, max_total_questions=50)
+    cases, _ = CUADAdapter().build_cases(raw, _chunks_for(raw), contracts=select_contracts(raw, 2), max_total_questions=50)
     case = cases[0]
     # Only generic BenchmarkCase fields exist at the top level.
     assert set(vars(case).keys()) == {
@@ -164,7 +164,7 @@ def test_cuad_specific_fields_do_not_leak_outside_metadata():
 
 def test_impossible_questions_are_excluded_not_converted_to_empty_cases():
     raw = valid_raw_dataset()
-    cases, unmapped = CUADAdapter().build_cases(raw, _chunks_for(raw), num_contracts=2, max_total_questions=50)
+    cases, unmapped = CUADAdapter().build_cases(raw, _chunks_for(raw), contracts=select_contracts(raw, 2), max_total_questions=50)
     all_ids = {c.case_id for c in cases} | {u["case_id"] for u in unmapped}
     assert "Beta Report__Termination" not in all_ids
 
@@ -176,7 +176,7 @@ def test_unmappable_ground_truth_is_reported_not_silently_dropped_or_faked():
     alpha_id = deterministic_document_id("Alpha Policy", prefix="cuad")
     chunks_by_doc_id[alpha_id] = [make_chunk(alpha_id, 0, "This chunk text has nothing to do with the answer.")]
 
-    cases, unmapped = CUADAdapter().build_cases(raw, chunks_by_doc_id, num_contracts=2, max_total_questions=50)
+    cases, unmapped = CUADAdapter().build_cases(raw, chunks_by_doc_id, contracts=select_contracts(raw, 2), max_total_questions=50)
 
     case_ids = {c.case_id for c in cases}
     assert "Alpha Policy__Staffing" not in case_ids
@@ -190,15 +190,51 @@ def test_missing_chunks_for_a_selected_contract_raises_instead_of_skipping():
     raw = valid_raw_dataset()
     incomplete_chunks = {deterministic_document_id("Alpha Policy", prefix="cuad"): [make_chunk("x", 0, "text")]}
     with pytest.raises(ValueError, match="Beta Report"):
-        CUADAdapter().build_cases(raw, incomplete_chunks, num_contracts=2, max_total_questions=50)
+        CUADAdapter().build_cases(raw, incomplete_chunks, contracts=select_contracts(raw, 2), max_total_questions=50)
 
 
 def test_max_total_questions_is_respected():
     raw = valid_raw_dataset()
-    cases, _ = CUADAdapter().build_cases(raw, _chunks_for(raw), num_contracts=2, max_total_questions=1)
+    cases, _ = CUADAdapter().build_cases(raw, _chunks_for(raw), contracts=select_contracts(raw, 2), max_total_questions=1)
     assert len(cases) == 1
 
 
 def test_max_total_questions_must_be_positive():
+    raw = valid_raw_dataset()
     with pytest.raises(ValueError):
-        CUADAdapter().build_cases(valid_raw_dataset(), _chunks_for(valid_raw_dataset()), num_contracts=2, max_total_questions=0)
+        CUADAdapter().build_cases(raw, _chunks_for(raw), contracts=select_contracts(raw, 2), max_total_questions=0)
+
+
+# --- build_cases accepts an ARBITRARY contract subset, not just a title-sorted prefix ---
+# (regression coverage for the fix that unblocks split-based / non-contiguous evaluation)
+
+def test_build_cases_accepts_a_single_arbitrary_contract_not_the_first_by_title():
+    raw = valid_raw_dataset()
+    beta_only = [c for c in raw["data"] if c["title"] == "Beta Report"]  # "Beta" sorts AFTER "Alpha"
+
+    cases, unmapped = CUADAdapter().build_cases(raw, _chunks_for(raw), contracts=beta_only, max_total_questions=50)
+
+    assert {c.case_id for c in cases} == {"Beta Report__Renewal"}
+    assert "Alpha Policy__Staffing" not in {c.case_id for c in cases}
+
+
+def test_build_cases_respects_the_given_contract_order_not_title_order():
+    raw = valid_raw_dataset()
+    reversed_by_title = sorted(raw["data"], key=lambda c: c["title"], reverse=True)  # Beta, then Alpha
+
+    cases, _ = CUADAdapter().build_cases(raw, _chunks_for(raw), contracts=reversed_by_title, max_total_questions=1)
+
+    assert [c.case_id for c in cases] == ["Beta Report__Renewal"]  # the cutoff hit Beta first, not Alpha
+
+
+def test_build_cases_ignores_a_contract_not_in_the_given_list_even_with_chunks_available():
+    """A contract present in chunks_by_doc_id but NOT in the `contracts`
+    list must be ignored entirely -- proves selection is driven solely by
+    the explicit list, with no residual dependency on dataset order/size."""
+    raw = valid_raw_dataset()
+    alpha_only = [c for c in raw["data"] if c["title"] == "Alpha Policy"]
+
+    cases, unmapped = CUADAdapter().build_cases(raw, _chunks_for(raw), contracts=alpha_only, max_total_questions=50)
+
+    all_ids = {c.case_id for c in cases} | {u["case_id"] for u in unmapped}
+    assert all_ids == {"Alpha Policy__Staffing"}  # Beta's questions never considered at all

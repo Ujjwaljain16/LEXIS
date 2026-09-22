@@ -8,7 +8,7 @@ is needed.
 """
 import os
 
-from lexis.evaluation.run_eval import chunk_document_text
+from lexis.evaluation.run_eval import chunk_document_text, device_info
 
 
 class FakeParser:
@@ -81,3 +81,57 @@ def test_temp_file_is_cleaned_up_even_if_chunking_raises():
 
     assert "path" in captured_path
     assert not os.path.exists(captured_path["path"])
+
+
+# --- device_info: run-provenance fact-finding, must never raise ---
+
+def test_device_info_reports_the_real_environment():
+    info = device_info()
+    assert "cuda_available" in info and isinstance(info["cuda_available"], bool)
+
+
+def test_device_info_never_raises_when_torch_is_unimportable(monkeypatch):
+    import builtins
+    real_import = builtins.__import__
+
+    def blocked_import(name, *args, **kwargs):
+        if name == "torch":
+            raise ImportError("simulated: torch not installed")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", blocked_import)
+
+    info = device_info()
+
+    assert info["cuda_available"] is False and "error" in info
+
+
+def test_device_info_reports_cuda_details_only_when_available(monkeypatch):
+    import lexis.evaluation.run_eval as run_eval_module
+
+    class FakeCuda:
+        @staticmethod
+        def is_available():
+            return True
+
+        @staticmethod
+        def get_device_name(i):
+            return "Fake GPU"
+
+        @staticmethod
+        def device_count():
+            return 1
+
+    class FakeTorch:
+        __version__ = "0.0.0-fake"
+        cuda = FakeCuda()
+
+    import sys
+    monkeypatch.setitem(sys.modules, "torch", FakeTorch())
+
+    info = run_eval_module.device_info()
+
+    assert info == {
+        "cuda_available": True, "torch_version": "0.0.0-fake",
+        "cuda_device_name": "Fake GPU", "cuda_device_count": 1,
+    }

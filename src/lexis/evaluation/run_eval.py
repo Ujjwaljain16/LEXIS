@@ -44,8 +44,10 @@ from typing import Dict, List
 
 from lexis.config import settings
 from lexis.evaluation.dataset.cuad_loader import CUADAdapter, CUADLoader, select_contracts
+from lexis.evaluation.dataset.cuad_split import contracts_for_split
 from lexis.evaluation.dataset.mapping import deterministic_document_id
 from lexis.evaluation.harness import EvalHarness
+from lexis.evaluation.provenance import build_provenance
 from lexis.evaluation.scoped_retrieval import retrieve_scoped
 from lexis.indexing.schema import Chunk
 from lexis.ingestion.chunker import SemanticChunker
@@ -56,6 +58,23 @@ from lexis.retrieval.hybrid_retriever import RetrievalEngine
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def device_info() -> Dict[str, object]:
+    """Best-effort compute-device facts for run provenance (CPU vs GPU can
+    produce tiny floating-point differences in embeddings). Never raises --
+    an environment without torch/CUDA just reports what it has."""
+    info: Dict[str, object] = {"cuda_available": False}
+    try:
+        import torch
+        info["torch_version"] = torch.__version__
+        info["cuda_available"] = torch.cuda.is_available()
+        if info["cuda_available"]:
+            info["cuda_device_name"] = torch.cuda.get_device_name(0)
+            info["cuda_device_count"] = torch.cuda.device_count()
+    except Exception as e:
+        info["error"] = str(e)
+    return info
 
 
 def chunk_document_text(parser: LexisParser, chunker: SemanticChunker, text: str, doc_id: str) -> List[Chunk]:
@@ -83,16 +102,39 @@ async def run_cuad_benchmark(
     diagnostics_output: str = None,
     skip_diagnostics: bool = False,
     protocol: str = "pooled",
+    split_manifest: str = None,
+    split_name: str = None,
+    ingest_checkpoint: str = None,
 ):
     logger.info(f"Loading CUAD dataset from {cuad_path}")
     raw = CUADLoader().load(cuad_path)
-    contracts = select_contracts(raw, num_contracts)
-    logger.info(f"Selected {len(contracts)} contracts (deterministic, sorted by title).")
+
+    if split_manifest:
+        if not split_name:
+            raise ValueError("--split-name is required when --split-manifest is given")
+        manifest = json.loads(Path(split_manifest).read_text(encoding="utf-8"))
+        contracts = contracts_for_split(raw, manifest, split_name)
+        logger.info(f"Selected {len(contracts)} contracts from split={split_name!r} of manifest {split_manifest!r}.")
+    else:
+        contracts = select_contracts(raw, num_contracts)
+        logger.info(f"Selected {len(contracts)} contracts (deterministic, sorted by title).")
 
     parser = LexisParser()
     embedder = BGEM3Embedder()
     chunker = SemanticChunker(embedder=embedder)
     pipeline = IngestionPipeline(parser=parser, embedder=embedder, chunker=chunker)
+
+    # Resumable ingest: chunking is always redone locally (cheap, deterministic,
+    # needed for ground truth regardless), but the expensive embed+upsert step
+    # is skipped for any doc_id already recorded in the checkpoint file, and the
+    # checkpoint is updated immediately after each successful ingest -- so a
+    # crash partway through a large contract set (e.g. the 164-contract test
+    # split) loses at most the one contract in flight, and re-running the exact
+    # same command resumes rather than redoing already-ingested work.
+    completed_doc_ids = set()
+    if ingest_checkpoint and Path(ingest_checkpoint).exists():
+        completed_doc_ids = set(json.loads(Path(ingest_checkpoint).read_text(encoding="utf-8")))
+        logger.info(f"Ingest checkpoint {ingest_checkpoint!r}: {len(completed_doc_ids)} contracts already ingested.")
 
     chunks_by_doc_id: Dict[str, List[Chunk]] = {}
     for contract in contracts:
@@ -106,10 +148,17 @@ async def run_cuad_benchmark(
         logger.info(f"  -> {len(chunks)} chunks")
 
         if not skip_ingest:
-            logger.info(f"  Ingesting into Qdrant/Elasticsearch/Postgres...")
-            await pipeline._upsert_to_databases(chunks)
+            if doc_id in completed_doc_ids:
+                logger.info(f"  Skipping ingest for '{title}' (doc_id={doc_id}): already in checkpoint.")
+            else:
+                logger.info(f"  Ingesting into Qdrant/bm25s/Postgres...")
+                await pipeline._upsert_to_databases(chunks)
+                if ingest_checkpoint:
+                    completed_doc_ids.add(doc_id)
+                    Path(ingest_checkpoint).parent.mkdir(parents=True, exist_ok=True)
+                    Path(ingest_checkpoint).write_text(json.dumps(sorted(completed_doc_ids)), encoding="utf-8")
 
-    cases, unmapped = CUADAdapter().build_cases(raw, chunks_by_doc_id, num_contracts, max_questions)
+    cases, unmapped = CUADAdapter().build_cases(raw, chunks_by_doc_id, contracts, max_questions)
     logger.info(f"Built {len(cases)} scoreable benchmark cases; {len(unmapped)} could not be mapped to any produced chunk.")
     for u in unmapped:
         logger.warning(f"UNMAPPED ({u['reason']}): {u['case_id']}")
@@ -142,19 +191,35 @@ async def run_cuad_benchmark(
     logger.info(f"Recall@{top_k}: {report.mean_recall_at_k:.4f}")
     logger.info(f"MRR:       {report.mean_reciprocal_rank:.4f}")
 
+    run_config = {
+        "num_contracts": len(contracts),
+        "max_questions": max_questions,
+        "top_k": top_k,
+        "protocol": protocol,
+        "embedding_model": settings.embedding_model,
+        "rrf_k": settings.rrf_k,
+        "chunk_target_tokens": settings.chunk_target_tokens,
+        "chunk_max_tokens": settings.chunk_max_tokens,
+        "semantic_chunking_threshold": settings.semantic_chunking_threshold,
+        "qdrant_collection_primary": settings.qdrant_collection_primary,
+        "bm25_index_dir": settings.bm25_index_dir,
+        "split_manifest": split_manifest,
+        "split_name": split_name,
+        "contract_titles_used": [c["title"] for c in contracts],
+    }
+
     output = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "benchmark": "cuad",
         "cuad_source_path": cuad_path,
         "protocol": protocol,
-        "run_config": {
-            "num_contracts": num_contracts,
-            "max_questions": max_questions,
-            "top_k": top_k,
-            "protocol": protocol,
-            "embedding_model": settings.embedding_model,
-            "rrf_k": settings.rrf_k,
-        },
+        "run_config": run_config,
+        "provenance": build_provenance(
+            config=run_config,
+            data_paths=[p for p in (cuad_path, split_manifest) if p],
+            packages=["sentence-transformers", "bm25s", "qdrant-client", "torch", "numpy", "litellm"],
+            extra={"device": device_info(), "ingest_checkpoint": ingest_checkpoint},
+        ),
         "num_cases_scored": report.num_cases_scored,
         "num_cases_excluded_no_ground_truth": report.num_cases_excluded,
         "num_cases_unmapped": len(unmapped),
@@ -257,8 +322,22 @@ def main():
         "--cuad-path", default="data/cuad_raw/CUAD_v1/CUAD_v1.json",
         help="Path to the real CUAD_v1.json (theatticusproject/cuad on the Hugging Face Hub).",
     )
-    arg_parser.add_argument("--num-contracts", type=int, default=10, help="Number of contracts to include (deterministic subset).")
+    arg_parser.add_argument("--num-contracts", type=int, default=10, help="Number of contracts to include (deterministic subset). Ignored if --split-manifest is given.")
     arg_parser.add_argument("--max-questions", type=int, default=50, help="Maximum total benchmark questions.")
+    arg_parser.add_argument(
+        "--split-manifest", default=None,
+        help="Frozen dev/test split manifest (evaluation/dataset/cuad_split.py::build_cuad_split output, "
+             "e.g. evaluation/splits/cuad_split_v1.json). When given, contracts come from this split "
+             "instead of --num-contracts, so an arbitrary (non-title-prefix) subset -- such as the held-out "
+             "test split -- can be evaluated.",
+    )
+    arg_parser.add_argument("--split-name", choices=["dev", "test"], default=None, help="Which split to evaluate; required with --split-manifest.")
+    arg_parser.add_argument(
+        "--ingest-checkpoint", default=None,
+        help="Path to a JSON file tracking which contracts have already been ingested; updated after "
+             "each contract so a large ingest run can resume after a crash/disconnect instead of "
+             "redoing already-embedded contracts. Omit to always ingest everything fresh.",
+    )
     arg_parser.add_argument("--top-k", type=int, default=30, help="Retrieval depth for Recall@k.")
     arg_parser.add_argument(
         "--protocol", choices=["pooled", "doc_scoped"], default="pooled",
@@ -285,7 +364,8 @@ def main():
         asyncio.run(run_cuad_benchmark(
             args.cuad_path, args.num_contracts, args.max_questions, args.top_k, args.output, args.skip_ingest,
             diagnostics_output=args.diagnostics_output, skip_diagnostics=args.skip_diagnostics,
-            protocol=args.protocol,
+            protocol=args.protocol, split_manifest=args.split_manifest, split_name=args.split_name,
+            ingest_checkpoint=args.ingest_checkpoint,
         ))
     else:
         raise ValueError(f"Unknown benchmark: {args.benchmark}")

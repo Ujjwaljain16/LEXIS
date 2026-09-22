@@ -91,7 +91,7 @@ async def run(args) -> dict:
         chunks_by_doc[doc_id] = chunks
         chunk_by_id.update({c.chunk_id: c for c in chunks})
 
-    cases, _ = CUADAdapter().build_cases(raw, chunks_by_doc, frozen["contracts"], frozen["questions"])
+    cases, _ = CUADAdapter().build_cases(raw, chunks_by_doc, contracts, frozen["questions"])
     cases = [c for c in cases if c.has_chunk_level_ground_truth()]
     print(f"cases: {len(cases)}, relevant chunk pairs: {sum(len(c.relevant_chunk_ids) for c in cases)}")
 
