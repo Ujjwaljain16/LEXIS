@@ -23,7 +23,12 @@ dependencies = [
     "tiktoken>=0.7.0",
 
     # Document parsing
-    "unstructured[pdf]>=0.14.0",
+    # ingestion/parser.py imports partition_pdf/partition_docx/partition_html/partition_text
+    # unconditionally at module load time, so both extras are required to import the module at
+    # all, not just to actually parse each format -- python-docx (the "docx" extra) happened to
+    # already be installed locally as a side effect of something else, masking this on a fresh
+    # environment (e.g. Colab) until this was caught.
+    "unstructured[pdf,docx]>=0.14.0",
 
     # LLM clients
     "groq>=0.9.0",
