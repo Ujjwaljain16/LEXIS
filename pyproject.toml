@@ -17,10 +17,14 @@ dependencies = [
     "opentelemetry-instrumentation-fastapi>=0.45b0",
     "opentelemetry-exporter-otlp-proto-grpc>=1.24.0",
     "prometheus-client>=0.20.0",
+    "asyncpg>=0.29.0",  # indexing/pg_client.py -- citation storage
 
     # ML / Retrieval
     "sentence-transformers>=3.0.0",
     "tiktoken>=0.7.0",
+    "scikit-learn>=1.4.0",  # indexing/raptor.py -- GaussianMixture clustering
+    "umap-learn>=0.5.5",  # indexing/raptor.py -- dimensionality reduction before clustering
+    "jsonschema>=4.20.0",  # ingestion/feature_extractor.py -- validates LLM-extracted feature JSON
 
     # Document parsing
     # ingestion/parser.py imports partition_pdf/partition_docx/partition_html/partition_text
