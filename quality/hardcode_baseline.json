@@ -92,6 +92,9 @@
   "ingestion/pipeline.py": {
     "numeric:comparison": 1
   },
+  "ingestion/rate_limiter.py": {
+    "numeric:comparison": 1
+  },
   "quality/hardcode_lint.py": {
     "string:hf_repo_id": 2
   },

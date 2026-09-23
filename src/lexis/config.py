@@ -55,6 +55,13 @@ class Settings(BaseSettings):
     # nearly all of them fail with RateLimitError instantly. Bounds how many
     # HyPEGenerator.generate_questions() calls run concurrently.
     hype_max_concurrent_requests: int = 5
+    # A concurrency bound alone does not bound RATE (fast calls still exceed 20/min even with
+    # few in flight at once) -- confirmed live. hype_requests_per_minute paces actual call
+    # starts via a sliding-window limiter, kept below the hard 20/min cap to leave headroom
+    # for other Gemini usage sharing the same key (e.g. feature_extractor.py).
+    hype_requests_per_minute: int = 15
+    hype_max_retries: int = 3
+    hype_retry_backoff_s: float = 5.0
 
     # Chunking
     semantic_chunking_threshold: float = 0.4

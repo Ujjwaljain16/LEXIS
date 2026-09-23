@@ -15,11 +15,16 @@ import asyncio
 import json
 from types import SimpleNamespace
 
+import litellm
 import pytest
 
 from lexis.config import settings
 from lexis.ingestion import hype_generator as hype_generator_module
 from lexis.ingestion.hype_generator import HyPEGenerator
+
+
+def rate_limit_error():
+    return litellm.RateLimitError(message="quota exceeded", llm_provider="gemini", model="gemini-2.5-flash")
 
 
 def make_fake_acompletion(captured: dict, questions=("What is the term?", "Who are the parties?", "Is it exclusive?")):
@@ -103,3 +108,68 @@ async def test_a_slow_call_times_out_instead_of_hanging_forever(monkeypatch):
     questions = await asyncio.wait_for(gen.generate_questions("Some chunk text."), timeout=2.0)
 
     assert questions == []
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_error_is_retried_and_succeeds_on_a_later_attempt(monkeypatch):
+    monkeypatch.setattr(settings, "hype_max_retries", 3)
+    monkeypatch.setattr(settings, "hype_retry_backoff_s", 0.001)  # keep the test fast
+
+    calls = {"n": 0}
+
+    async def flaky_acompletion(**kwargs):
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise rate_limit_error()
+        content = json.dumps({"questions": ["Recovered question?"]})
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=content))])
+
+    monkeypatch.setattr(hype_generator_module, "acompletion", flaky_acompletion)
+
+    gen = HyPEGenerator()
+    questions = await gen.generate_questions("Some chunk text.")
+
+    assert questions == ["Recovered question?"]
+    assert calls["n"] == 3
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_error_gives_up_after_exhausting_retries(monkeypatch):
+    monkeypatch.setattr(settings, "hype_max_retries", 2)
+    monkeypatch.setattr(settings, "hype_retry_backoff_s", 0.001)
+
+    calls = {"n": 0}
+
+    async def always_rate_limited(**kwargs):
+        calls["n"] += 1
+        raise rate_limit_error()
+
+    monkeypatch.setattr(hype_generator_module, "acompletion", always_rate_limited)
+
+    gen = HyPEGenerator()
+    questions = await gen.generate_questions("Some chunk text.")
+
+    assert questions == []
+    assert calls["n"] == 3  # initial attempt + 2 retries, then give up
+
+
+@pytest.mark.asyncio
+async def test_a_non_rate_limit_error_is_not_retried(monkeypatch):
+    """Retrying only makes sense for a transient rate limit -- a genuine
+    error (bad request, auth failure, etc.) should fail fast, not burn
+    hype_max_retries attempts waiting for something that will never
+    resolve by itself."""
+    monkeypatch.setattr(settings, "hype_max_retries", 3)
+    calls = {"n": 0}
+
+    async def failing_acompletion(**kwargs):
+        calls["n"] += 1
+        raise RuntimeError("not a rate limit")
+
+    monkeypatch.setattr(hype_generator_module, "acompletion", failing_acompletion)
+
+    gen = HyPEGenerator()
+    questions = await gen.generate_questions("Some chunk text.")
+
+    assert questions == []
+    assert calls["n"] == 1
