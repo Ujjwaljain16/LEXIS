@@ -29,7 +29,7 @@ from qdrant_client.http import models as qmodels
 from lexis.config import settings
 from lexis.retrieval.fusion import apply_rrf
 from lexis.retrieval.hybrid_retriever import RetrievalEngine, RetrievalTrace
-from lexis.retrieval.interfaces import Candidate
+from lexis.retrieval.interfaces import Candidate, Query
 
 
 async def retrieve_scoped(engine: RetrievalEngine, query: str, doc_ids: Sequence[str],
@@ -79,10 +79,23 @@ async def retrieve_scoped(engine: RetrievalEngine, query: str, doc_ids: Sequence
 
     lists = [lst for lst in (dense, bm25, hype) if lst]
     fused = apply_rrf(lists, k=settings.rrf_k)
+
+    # R4: same top-rerank_top_k-then-append-the-rest policy as
+    # RetrievalEngine._maybe_rerank -- duplicated rather than called (getattr, not a hard
+    # dependency on RetrievalEngine's exact interface) so the lightweight `engine`-like fakes
+    # this module's own tests use only need a `reranker` attribute, not every RetrievalEngine
+    # method.
+    reranker = getattr(engine, "reranker", None)
+    if reranker is not None and fused:
+        head, tail = fused[:settings.rerank_top_k], fused[settings.rerank_top_k:]
+        ranked = (await reranker.transform(Query(text=query), head)) + tail
+    else:
+        ranked = fused
+
     final_chunks = [
         {"id": c.chunk_id, "score": c.score, "rrf_score": c.score, "source_path": c.source_path,
          "payload": c.metadata, "text": c.content}
-        for c in fused[:top_n_rrf]
+        for c in ranked[:top_n_rrf]
     ]
     return RetrievalTrace(query=query, dense_candidates=dense, bm25_candidates=bm25,
                           fused_candidates=fused, final_chunks=final_chunks, top_n_rrf=top_n_rrf,

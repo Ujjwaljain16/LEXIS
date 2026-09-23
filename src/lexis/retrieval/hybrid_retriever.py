@@ -7,8 +7,9 @@ from lexis.config import settings
 from lexis.indexing.qdrant_client import LexisQdrantClient
 from lexis.indexing.bm25_index import LexisBM25Index
 from lexis.ingestion.embedder import BGEM3Embedder
+from lexis.reranking.cross_encoder import BAAICrossEncoder
 from lexis.retrieval.fusion import apply_rrf
-from lexis.retrieval.interfaces import Candidate
+from lexis.retrieval.interfaces import Candidate, Query
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,9 @@ class RetrievalEngine:
         self.bm25 = LexisBM25Index(index_dir=settings.bm25_index_dir)
         self.qdrant = LexisQdrantClient()
         self.embedder = BGEM3Embedder()
+        # R4: only constructed (and only then does the ~600MB+ model actually load) when
+        # explicitly enabled -- a disabled engine pays zero extra cost.
+        self.reranker = BAAICrossEncoder() if settings.rerank_enabled else None
         self.timeout_sec = 2.0  # 2 second max per path
 
     async def _safe_execute(self, task, path_name: str) -> List[Any]:
@@ -63,6 +67,21 @@ class RetrievalEngine:
                 content=r.payload.get("content", "")
             ))
         return candidates
+
+    async def _maybe_rerank(self, query: str, fused: List[Candidate]) -> List[Candidate]:
+        """No-op when rerank is disabled. Otherwise reranks only the top
+        settings.rerank_top_k of the RRF-fused list (a cross-encoder scoring
+        hundreds of candidates per query would be needlessly expensive --
+        the plan calls for reranking "over top-50-100"), then appends
+        whatever's left AFTER that cutoff in its original RRF order so the
+        full candidate pool is preserved -- reranking only reorders,
+        it must never make a candidate that WAS in the fused list
+        disappear from the eventual top_n_rrf cut."""
+        if self.reranker is None or not fused:
+            return fused
+        head, tail = fused[:settings.rerank_top_k], fused[settings.rerank_top_k:]
+        reranked_head = await self.reranker.transform(Query(text=query), head)
+        return reranked_head + tail
 
     async def _path_hype(self, query_emb: List[float], top_k: int) -> List[Candidate]:
         """Searches the HyPE hypothetical-question collection (R2). Each hit's payload
@@ -130,10 +149,11 @@ class RetrievalEngine:
         if res_hype: candidate_lists.append(res_hype)
 
         fused = apply_rrf(candidate_lists, k=settings.rrf_k)
+        ranked = await self._maybe_rerank(query, fused)
 
         # Format for downstream
         final_chunks = []
-        for c in fused[:top_n_rrf]:
+        for c in ranked[:top_n_rrf]:
             final_chunks.append({
                 "id": c.chunk_id,
                 "score": c.score,
@@ -179,9 +199,10 @@ class RetrievalEngine:
         if res_hype: candidate_lists.append(res_hype)
 
         fused = apply_rrf(candidate_lists, k=settings.rrf_k)
+        ranked = await self._maybe_rerank(query, fused)
 
         final_chunks = []
-        for c in fused[:top_n_rrf]:
+        for c in ranked[:top_n_rrf]:
             final_chunks.append({
                 "id": c.chunk_id,
                 "score": c.score,

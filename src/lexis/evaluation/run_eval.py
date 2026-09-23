@@ -202,6 +202,7 @@ async def run_cuad_benchmark(
         "chunk_max_tokens": settings.chunk_max_tokens,
         "semantic_chunking_threshold": settings.semantic_chunking_threshold,
         "hype_enabled": settings.hype_enabled,
+        "rerank_enabled": settings.rerank_enabled,
         "qdrant_collection_primary": settings.qdrant_collection_primary,
         "bm25_index_dir": settings.bm25_index_dir,
         "split_manifest": split_manifest,

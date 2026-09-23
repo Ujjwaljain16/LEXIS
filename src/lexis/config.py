@@ -63,6 +63,11 @@ class Settings(BaseSettings):
     hype_max_retries: int = 3
     hype_retry_backoff_s: float = 5.0
 
+    # R4: cross-encoder rerank. Off by default -- an ablation flag. No external API dependency
+    # (local model), so unlike R2/HyPE this is not rate-limited; the cost is query-time latency.
+    rerank_enabled: bool = False
+    rerank_top_k: int = 50
+
     # Chunking
     semantic_chunking_threshold: float = 0.4
     chunk_target_tokens: int = 500
