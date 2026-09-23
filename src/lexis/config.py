@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     # Embeddings
     embedding_model: str = "BAAI/bge-m3"
     embedding_dim: int = 1024
+    embedding_batch_size: int = 32  # lower on memory-constrained GPUs (e.g. Colab free-tier T4)
 
     # Vector Store
     qdrant_url: str = "http://localhost:6333"

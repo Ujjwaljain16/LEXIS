@@ -24,8 +24,8 @@ class BGEM3Embedder(BaseEmbedder):
         model = get_embedder()
         # show_progress_bar if batch is large
         return model.encode(
-            texts, 
-            batch_size=32, 
-            normalize_embeddings=True, 
+            texts,
+            batch_size=settings.embedding_batch_size,
+            normalize_embeddings=True,
             show_progress_bar=len(texts) > 100
         )
