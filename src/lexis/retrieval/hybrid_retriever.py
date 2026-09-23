@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
 
 from lexis.config import settings
@@ -24,6 +24,8 @@ class RetrievalTrace:
     fused_candidates: List[Candidate]    # full RRF-sorted list, BEFORE the top_n_rrf cutoff
     final_chunks: List[dict]             # identical shape/content to retrieve()'s return value
     top_n_rrf: int
+    hype_candidates: List[Candidate] = field(default_factory=list)  # Path HyPE raw results;
+                                                                     # empty when hype_enabled=False
 
 class RetrievalEngine:
     """
@@ -62,6 +64,24 @@ class RetrievalEngine:
             ))
         return candidates
 
+    async def _path_hype(self, query_emb: List[float], top_k: int) -> List[Candidate]:
+        """Searches the HyPE hypothetical-question collection (R2). Each hit's payload
+        was denormalized at ingest time (see pipeline.py::_build_hype_points) to carry the
+        ORIGINATING chunk's own chunk_id/content, not the hype collection's own row -- so a
+        hit here becomes a Candidate for the real chunk, exactly like path_b_global/path_d_bm25,
+        and apply_rrf fuses it by that chunk_id like any other path."""
+        results = await self.qdrant.search(settings.qdrant_collection_hype, query_emb, top_k=top_k)
+        candidates = []
+        for r in results:
+            candidates.append(Candidate(
+                chunk_id=r.payload.get("chunk_id", ""),
+                score=r.score,
+                source_path="path_hype",
+                metadata=r.payload,
+                content=r.payload.get("content", "")
+            ))
+        return candidates
+
     async def _path_d_bm25(self, query_text: str, top_k: int) -> List[Candidate]:
         """Searches the local bm25s index (see docs/ADR.md ADR-003). bm25s is
         synchronous/CPU-bound, so it runs in a worker thread to avoid blocking
@@ -95,16 +115,22 @@ class RetrievalEngine:
         # Concurrently execute paths
         task_b = self._safe_execute(self._path_b_global(query_emb, top_k_per_path), "Path B (Global)")
         task_d = self._safe_execute(self._path_d_bm25(query, top_k_per_path), "Path D (BM25)")
-        
-        res_b, res_d = await asyncio.gather(task_b, task_d)
-        
+        tasks = [task_b, task_d]
+        if settings.hype_enabled:
+            tasks.append(self._safe_execute(self._path_hype(query_emb, top_k_per_path), "Path HyPE"))
+
+        results = await asyncio.gather(*tasks)
+        res_b, res_d = results[0], results[1]
+        res_hype = results[2] if settings.hype_enabled else []
+
         # Fuse with RRF
         candidate_lists = []
         if res_b: candidate_lists.append(res_b)
         if res_d: candidate_lists.append(res_d)
-            
+        if res_hype: candidate_lists.append(res_hype)
+
         fused = apply_rrf(candidate_lists, k=settings.rrf_k)
-        
+
         # Format for downstream
         final_chunks = []
         for c in fused[:top_n_rrf]:
@@ -139,12 +165,18 @@ class RetrievalEngine:
 
         task_b = self._safe_execute(self._path_b_global(query_emb, top_k_per_path), "Path B (Global)")
         task_d = self._safe_execute(self._path_d_bm25(query, top_k_per_path), "Path D (BM25)")
+        tasks = [task_b, task_d]
+        if settings.hype_enabled:
+            tasks.append(self._safe_execute(self._path_hype(query_emb, top_k_per_path), "Path HyPE"))
 
-        res_b, res_d = await asyncio.gather(task_b, task_d)
+        results = await asyncio.gather(*tasks)
+        res_b, res_d = results[0], results[1]
+        res_hype = results[2] if settings.hype_enabled else []
 
         candidate_lists = []
         if res_b: candidate_lists.append(res_b)
         if res_d: candidate_lists.append(res_d)
+        if res_hype: candidate_lists.append(res_hype)
 
         fused = apply_rrf(candidate_lists, k=settings.rrf_k)
 
@@ -166,4 +198,5 @@ class RetrievalEngine:
             fused_candidates=fused,
             final_chunks=final_chunks,
             top_n_rrf=top_n_rrf,
+            hype_candidates=res_hype,
         )

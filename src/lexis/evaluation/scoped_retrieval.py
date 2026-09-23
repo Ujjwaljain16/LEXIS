@@ -61,7 +61,23 @@ async def retrieve_scoped(engine: RetrievalEngine, query: str, doc_ids: Sequence
         for h in scoped_hits
     ]
 
-    lists = [lst for lst in (dense, bm25) if lst]
+    hype: list = []
+    if settings.hype_enabled:
+        hype_response = await engine.qdrant.client.query_points(
+            collection_name=settings.qdrant_collection_hype,
+            query=query_emb,
+            limit=top_k_per_path,
+            query_filter=qmodels.Filter(must=[
+                qmodels.FieldCondition(key="doc_id", match=qmodels.MatchAny(any=scope))
+            ]),
+        )
+        hype = [
+            Candidate(chunk_id=r.payload.get("chunk_id", ""), score=r.score, source_path="path_hype",
+                      metadata=r.payload, content=r.payload.get("content", ""))
+            for r in hype_response.points
+        ]
+
+    lists = [lst for lst in (dense, bm25, hype) if lst]
     fused = apply_rrf(lists, k=settings.rrf_k)
     final_chunks = [
         {"id": c.chunk_id, "score": c.score, "rrf_score": c.score, "source_path": c.source_path,
@@ -69,4 +85,5 @@ async def retrieve_scoped(engine: RetrievalEngine, query: str, doc_ids: Sequence
         for c in fused[:top_n_rrf]
     ]
     return RetrievalTrace(query=query, dense_candidates=dense, bm25_candidates=bm25,
-                          fused_candidates=fused, final_chunks=final_chunks, top_n_rrf=top_n_rrf)
+                          fused_candidates=fused, final_chunks=final_chunks, top_n_rrf=top_n_rrf,
+                          hype_candidates=hype)

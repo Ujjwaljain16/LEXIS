@@ -44,6 +44,12 @@ class Settings(BaseSettings):
     retrieval_top_k_per_path: int = 15
     retrieval_fusion_top_k: int = 50
 
+    # R2: HyPE (Hypothetical Document Embeddings) question index. Default off -- an ablation
+    # flag, not a silent behavior change; enabling it makes ingestion generate 3 LLM questions
+    # per chunk (indexed into qdrant_collection_hype) and adds a third retrieval path.
+    hype_enabled: bool = False
+    hype_questions_per_chunk: int = 3
+
     # Chunking
     semantic_chunking_threshold: float = 0.4
     chunk_target_tokens: int = 500

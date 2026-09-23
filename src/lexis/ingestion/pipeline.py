@@ -18,6 +18,7 @@ from lexis.ingestion.parser import LexisParser
 from lexis.ingestion.embedder import BGEM3Embedder
 from lexis.ingestion.chunker import SemanticChunker
 from lexis.ingestion.feature_extractor import FeatureExtractor
+from lexis.ingestion.hype_generator import HyPEGenerator
 from lexis.indexing.raptor import LexisRaptor
 from lexis.indexing.qdrant_client import LexisQdrantClient
 from lexis.indexing.bm25_index import LexisBM25Index
@@ -31,6 +32,7 @@ class IngestionPipeline:
         self.embedder = embedder if embedder is not None else BGEM3Embedder()
         self.chunker = chunker if chunker is not None else SemanticChunker(embedder=self.embedder)
         self.feature_extractor = FeatureExtractor()
+        self.hype_generator = HyPEGenerator()
         self.raptor = LexisRaptor(embedder=self.embedder)
 
         self.qdrant = LexisQdrantClient()
@@ -40,6 +42,49 @@ class IngestionPipeline:
     def _deterministic_uuid(self, string_id: str) -> str:
         """Qdrant requires pure UUIDs. We map our pqac- prefixed IDs to pure UUIDs."""
         return str(uuid.uuid5(uuid.NAMESPACE_DNS, string_id))
+
+    async def _build_hype_points(self, chunks: List[Chunk]) -> List[models.PointStruct]:
+        """One HyPEGenerator call per chunk (concurrent), then one batched embed_batch
+        call over every generated question across all chunks (not per-chunk) -- matches
+        how the primary/BM25 paths above already batch embeddings.
+
+        Each point's payload denormalizes the chunk's real content (not just chunk_id)
+        so retrieval/hybrid_retriever.py's HyPE path can build a Candidate directly from
+        the hit, exactly like path_b_global/path_d_bm25 do -- no second lookup at query
+        time, and no risk of apply_rrf ever surfacing an empty/wrong "content" for a
+        chunk that RRF fusion first sees via this path (see fusion.py: the first
+        candidate seen for a chunk_id wins its content/metadata).
+        """
+        per_chunk_questions = await asyncio.gather(
+            *(self.hype_generator.generate_questions(c.raw_content) for c in chunks)
+        )
+
+        texts, owners = [], []
+        for c, questions in zip(chunks, per_chunk_questions):
+            for q in questions:
+                if q and q.strip():
+                    texts.append(q)
+                    owners.append((c, q))
+        if not texts:
+            return []
+
+        embeddings = self.embedder.embed_batch(texts)
+        points = []
+        for (c, q), emb in zip(owners, embeddings):
+            point_id = self._deterministic_uuid(f"{c.chunk_id}|hype|{q}")
+            points.append(models.PointStruct(
+                id=point_id,
+                vector=emb.tolist(),
+                payload={
+                    "chunk_id": c.chunk_id,
+                    "doc_id": c.doc_id,
+                    "content": c.raw_content,
+                    "question": q,
+                    "doc_type": c.metadata.document_type,
+                    "chunk_index": c.split_idx,
+                }
+            ))
+        return points
 
     async def ingest_document(self, file_path: str, doc_id: str, progress_callback=None):
         """
@@ -90,6 +135,16 @@ class IngestionPipeline:
         # Upsert Qdrant
         if primary_points:
             await self.qdrant.upsert_chunks(settings.qdrant_collection_primary, primary_points)
+
+        # R2: HyPE question index (off by default -- settings.hype_enabled). Generates N
+        # hypothetical questions per chunk (index-time LLM cost only, never at query time) and
+        # embeds them into a separate collection so a short query can match a semantically close
+        # hypothetical question instead of the (usually much longer, differently-phrased) chunk
+        # text itself -- see LEXIS_FINAL_PLAN.md section 4, R2.
+        if settings.hype_enabled and chunks:
+            hype_points = await self._build_hype_points(chunks)
+            if hype_points:
+                await self.qdrant.upsert_chunks(settings.qdrant_collection_hype, hype_points)
 
         # Upsert BM25 (ADR-003: local bm25s index, replaces Elasticsearch).
         # index_text carries the CCH-prefixed text (doc title/type/section), matching what the
