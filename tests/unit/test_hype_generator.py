@@ -11,6 +11,7 @@ without ever surfacing an error. Now uses settings.gemini_model_feature
 per-chunk LLM enrichment), and failures are logged instead of swallowed
 silently.
 """
+import asyncio
 import json
 from types import SimpleNamespace
 
@@ -80,5 +81,25 @@ async def test_a_failed_call_returns_an_empty_list_instead_of_raising(monkeypatc
 
     gen = HyPEGenerator()
     questions = await gen.generate_questions("Some chunk text.")
+
+    assert questions == []
+
+
+@pytest.mark.asyncio
+async def test_a_slow_call_times_out_instead_of_hanging_forever(monkeypatch):
+    """Regression: pipeline.py fans this call out concurrently across every
+    chunk of a document via asyncio.gather -- without a per-call timeout,
+    one stuck request would block the whole document's ingestion
+    indefinitely, not just its own 3 questions."""
+    monkeypatch.setattr(settings, "hype_generation_timeout_s", 0.05)
+
+    async def hanging_acompletion(**kwargs):
+        await asyncio.sleep(10)
+        raise AssertionError("should have been cancelled by the timeout long before this")
+
+    monkeypatch.setattr(hype_generator_module, "acompletion", hanging_acompletion)
+
+    gen = HyPEGenerator()
+    questions = await asyncio.wait_for(gen.generate_questions("Some chunk text."), timeout=2.0)
 
     assert questions == []

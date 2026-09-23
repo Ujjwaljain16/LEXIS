@@ -49,6 +49,12 @@ class Settings(BaseSettings):
     # per chunk (indexed into qdrant_collection_hype) and adds a third retrieval path.
     hype_enabled: bool = False
     hype_questions_per_chunk: int = 3
+    hype_generation_timeout_s: int = 30
+    # Gemini's free tier caps gemini-2.5-flash at 20 requests/minute; a document with more
+    # chunks than that firing every call at once (the naive asyncio.gather approach) makes
+    # nearly all of them fail with RateLimitError instantly. Bounds how many
+    # HyPEGenerator.generate_questions() calls run concurrently.
+    hype_max_concurrent_requests: int = 5
 
     # Chunking
     semantic_chunking_threshold: float = 0.4

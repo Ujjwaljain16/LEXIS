@@ -6,6 +6,7 @@ Source Inspiration: plan.md (HyPE Path B).
 Deviations from Source Repos: Generates settings.hype_questions_per_chunk questions per chunk.
 Expected Impact on Metrics: Increases recall for asymmetrical queries (short query vs long document chunk).
 """
+import asyncio
 import json
 import logging
 from typing import List
@@ -30,14 +31,21 @@ class HyPEGenerator:
         )
 
         try:
-            response = await acompletion(
-                model=settings.gemini_model_feature,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": chunk_text}
-                ],
-                response_format={"type": "json_object"},
-                temperature=0.1
+            # Timeout matters here specifically because pipeline.py fans this call out
+            # concurrently across every chunk of a document via asyncio.gather -- without a
+            # per-call timeout, one slow/stuck request blocks the ENTIRE document's ingestion
+            # indefinitely (gather waits for all tasks), not just its own 3 questions.
+            response = await asyncio.wait_for(
+                acompletion(
+                    model=settings.gemini_model_feature,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": chunk_text}
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.1
+                ),
+                timeout=settings.hype_generation_timeout_s,
             )
             data = json.loads(response.choices[0].message.content)
             return data.get("questions", [])

@@ -44,9 +44,12 @@ class IngestionPipeline:
         return str(uuid.uuid5(uuid.NAMESPACE_DNS, string_id))
 
     async def _build_hype_points(self, chunks: List[Chunk]) -> List[models.PointStruct]:
-        """One HyPEGenerator call per chunk (concurrent), then one batched embed_batch
-        call over every generated question across all chunks (not per-chunk) -- matches
-        how the primary/BM25 paths above already batch embeddings.
+        """One HyPEGenerator call per chunk, concurrency-bounded (see
+        settings.hype_max_concurrent_requests -- a live run against Gemini's free tier
+        confirmed firing every chunk's call at once, unbounded, blows through the
+        20 req/min quota almost immediately and fails most of them with RateLimitError),
+        then one batched embed_batch call over every generated question across all chunks
+        (not per-chunk) -- matches how the primary/BM25 paths above already batch embeddings.
 
         Each point's payload denormalizes the chunk's real content (not just chunk_id)
         so retrieval/hybrid_retriever.py's HyPE path can build a Candidate directly from
@@ -55,9 +58,13 @@ class IngestionPipeline:
         chunk that RRF fusion first sees via this path (see fusion.py: the first
         candidate seen for a chunk_id wins its content/metadata).
         """
-        per_chunk_questions = await asyncio.gather(
-            *(self.hype_generator.generate_questions(c.raw_content) for c in chunks)
-        )
+        semaphore = asyncio.Semaphore(settings.hype_max_concurrent_requests)
+
+        async def bounded_generate(chunk: Chunk) -> List[str]:
+            async with semaphore:
+                return await self.hype_generator.generate_questions(chunk.raw_content)
+
+        per_chunk_questions = await asyncio.gather(*(bounded_generate(c) for c in chunks))
 
         texts, owners = [], []
         for c, questions in zip(chunks, per_chunk_questions):

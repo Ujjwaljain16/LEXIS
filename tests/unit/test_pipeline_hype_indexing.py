@@ -5,6 +5,8 @@ Regression tests for ingestion/pipeline.py's R2 HyPE wiring
 settings.hype_enabled defaults to False, so ingestion behavior for every
 existing caller is unchanged unless a test/config explicitly opts in.
 """
+import asyncio
+
 import numpy as np
 import pytest
 
@@ -116,6 +118,37 @@ async def test_hype_enabled_but_generator_returns_nothing_upserts_no_hype_points
 
     collections_written = [c for c, _ in pipeline.qdrant.upserted]
     assert settings.qdrant_collection_hype not in collections_written
+
+
+@pytest.mark.asyncio
+async def test_hype_generation_never_exceeds_the_configured_concurrency_limit(monkeypatch):
+    """Regression: a live run against Gemini's free tier (20 req/min for
+    gemini-2.5-flash) showed the naive unbounded asyncio.gather over every
+    chunk's HyPE call fires them all at once, and nearly all fail instantly
+    with RateLimitError once a document has more chunks than that quota.
+    hype_max_concurrent_requests must actually bound how many
+    generate_questions() calls are in flight simultaneously."""
+    monkeypatch.setattr(settings, "hype_enabled", True)
+    monkeypatch.setattr(settings, "hype_max_concurrent_requests", 2)
+
+    in_flight = 0
+    max_in_flight = 0
+
+    class TrackingHyPEGenerator:
+        async def generate_questions(self, chunk_text):
+            nonlocal in_flight, max_in_flight
+            in_flight += 1
+            max_in_flight = max(max_in_flight, in_flight)
+            await asyncio.sleep(0.01)  # force overlap so the bound is actually exercised
+            in_flight -= 1
+            return ["Q?"]
+
+    pipeline = make_pipeline(hype_generator=TrackingHyPEGenerator())
+    chunks = [make_chunk(split_idx=i, text=f"Clause {i}.") for i in range(10)]
+
+    await pipeline._upsert_to_databases(chunks)
+
+    assert max_in_flight <= 2
 
 
 @pytest.mark.asyncio
