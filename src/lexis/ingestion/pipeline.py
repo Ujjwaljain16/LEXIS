@@ -91,13 +91,21 @@ class IngestionPipeline:
         if primary_points:
             await self.qdrant.upsert_chunks(settings.qdrant_collection_primary, primary_points)
 
-        # Upsert BM25 (ADR-003: local bm25s index, replaces Elasticsearch)
+        # Upsert BM25 (ADR-003: local bm25s index, replaces Elasticsearch).
+        # index_text carries the CCH-prefixed text (doc title/type/section), matching what the
+        # dense path already embeds above -- previously BM25 tokenized raw_content only, so
+        # keyword search never benefited from that context. "content" stays raw_content, since
+        # LexisBM25Index returns the corpus dict verbatim as each hit's payload and path_d_bm25.py
+        # reads payload["content"] as the candidate's actual text -- indexing the CCH-prefixed
+        # text under "content" would leak "Document: ...\nType: ...\nSection: ...\n\n" into every
+        # BM25 candidate's content shown to the LLM/citations.
         if chunks:
             bm25_docs = [
                 {
                     "chunk_id": c.chunk_id,
                     "doc_id": c.doc_id,
                     "content": c.raw_content,
+                    "index_text": c.content,
                     "doc_type": c.metadata.document_type,
                     "source_file": c.metadata.source_file,
                     "chunk_index": c.split_idx,

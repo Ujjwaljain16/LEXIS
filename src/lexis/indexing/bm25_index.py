@@ -50,7 +50,11 @@ class LexisBM25Index:
         if not corpus:
             self._retriever = None
             return
-        texts = [doc.get("content", "") for doc in corpus]
+        # index_text (when present) is what gets tokenized for matching -- it may carry extra
+        # context (e.g. a contextual chunk header) that "content" deliberately excludes, since
+        # "content" is returned verbatim as each hit's payload (see search()) and callers treat
+        # it as the chunk's actual displayed/cited text.
+        texts = [doc.get("index_text", doc.get("content", "")) for doc in corpus]
         tokenized = bm25s.tokenize(texts, stopwords="en", show_progress=False)
         retriever = bm25s.BM25(corpus=corpus)
         retriever.index(tokenized, show_progress=False)
@@ -62,8 +66,10 @@ class LexisBM25Index:
         matching Qdrant's upsert-by-id semantics rather than blindly
         appending a duplicate) and rebuilds the index so they are
         searchable immediately. Each doc must have a 'chunk_id' and
-        'content' key; other keys are carried through into search results
-        but are otherwise opaque to this class."""
+        'content' key; an optional 'index_text' key is tokenized for
+        matching instead of 'content' when present. Other keys are carried
+        through into search results but are otherwise opaque to this
+        class."""
         if not docs:
             return
         Path(self.index_dir).mkdir(parents=True, exist_ok=True)

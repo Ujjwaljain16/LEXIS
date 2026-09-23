@@ -113,3 +113,38 @@ def test_empty_query_returns_no_results_not_a_crash(tmp_path):
     index = LexisBM25Index(index_dir=str(tmp_path / "bm25"))
     index.add_documents([make_doc("c1", "doc-1", "some content")])
     assert index.search("   ", top_k=5) == []
+
+
+def test_index_text_is_tokenized_but_content_is_returned_unmodified(tmp_path):
+    """Regression: pipeline.py sets index_text to a CCH-prefixed version of
+    the chunk (doc title/type/section header) so BM25 matching benefits
+    from that context the same way dense embedding already does, but
+    "content" must stay the clean, unprefixed text -- path_d_bm25.py reads
+    payload["content"] as the candidate's actual displayed/cited text, so
+    leaking the header into it would corrupt citations."""
+    index = LexisBM25Index(index_dir=str(tmp_path / "bm25"))
+    index.add_documents([{
+        "chunk_id": "c1",
+        "doc_id": "doc-1",
+        "content": "the term of this agreement is five years",
+        "index_text": "Document: Master Supply Agreement\nType: contract\nSection: Term\n\n"
+                       "the term of this agreement is five years",
+    }])
+
+    # A query that only matches words from the header (not "content") must still hit,
+    # proving index_text -- not content -- is what got tokenized.
+    results = index.search("master supply agreement term section", top_k=5)
+    assert len(results) == 1
+    assert results[0]["chunk_id"] == "c1"
+    assert results[0]["payload"]["content"] == "the term of this agreement is five years"
+    assert "Document:" not in results[0]["payload"]["content"]
+
+
+def test_missing_index_text_falls_back_to_content(tmp_path):
+    """Older/other callers that only ever set "content" (no index_text) --
+    e.g. this test file's own make_doc() -- must keep working unchanged."""
+    index = LexisBM25Index(index_dir=str(tmp_path / "bm25"))
+    index.add_documents([make_doc("c1", "doc-1", "a policy about staffing levels")])
+    results = index.search("staffing levels", top_k=5)
+    assert len(results) == 1
+    assert results[0]["payload"]["content"] == "a policy about staffing levels"
