@@ -23,6 +23,14 @@ structure:
   levels: [contract, article, section, clause]
   chunk_strategy: clause
   parent_context_template: "{title} > {path}"
+  # Relocated from the old ingestion/parser.py::DOC_TYPE_PATTERNS module constant (a
+  # zero-hardcoding violation: English-only vocabulary hardcoded into the base parser).
+  # Same patterns, same order -- ingestion behavior for this pack is unchanged.
+  doc_type_patterns:
+    contract: ["agreement", "contract", "amendment", "covenant"]
+    10-k: ["form 10-k", "annual report", "item 1a", "risk factor"]
+    regulation: ["whereas", "hereby", "regulation", "statute"]
+    research: ["abstract", "methodology", "conclusion", "references"]
 
 feature_schema_ref: contract
 

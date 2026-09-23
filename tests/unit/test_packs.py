@@ -88,6 +88,21 @@ def test_max_chunk_tokens_must_be_positive():
         JurisdictionPack(**pack_dict(structure={"max_chunk_tokens": 0}))
 
 
+def test_doc_type_patterns_default_to_empty():
+    pack = JurisdictionPack(**pack_dict())
+    assert pack.structure.doc_type_patterns == {}
+
+
+def test_doc_type_patterns_round_trip():
+    pack = JurisdictionPack(**pack_dict(structure={"doc_type_patterns": {"contract": ["agreement", "covenant"]}}))
+    assert pack.structure.doc_type_patterns == {"contract": ["agreement", "covenant"]}
+
+
+def test_doc_type_patterns_rejects_a_pattern_that_does_not_compile():
+    with pytest.raises(ValidationError, match="does not compile"):
+        JurisdictionPack(**pack_dict(structure={"doc_type_patterns": {"contract": ["(bad"]}}))
+
+
 # --- loading ---
 
 def write_pack(tmp_path, name="test_pack", **kw):

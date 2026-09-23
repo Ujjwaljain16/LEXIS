@@ -51,6 +51,23 @@ def _is_number(node: ast.AST) -> bool:
     return isinstance(node, ast.Constant) and isinstance(node.value, (int, float)) and not isinstance(node.value, bool)
 
 
+def _is_string_list(node: ast.AST) -> bool:
+    return isinstance(node, ast.List) and len(node.elts) > 0 and \
+        all(isinstance(e, ast.Constant) and isinstance(e.value, str) for e in node.elts)
+
+
+def _is_dict_of_string_lists(node: ast.AST) -> bool:
+    """A module-level dict literal whose every value is a non-empty list of
+    string literals -- the exact shape of a domain-classification pattern
+    table (e.g. DOC_TYPE_PATTERNS: {"contract": ["agreement", "contract",
+    ...], ...}). Such tables encode jurisdiction/language-specific vocabulary
+    and belong in a pack's config, not a module constant; the existing
+    string/numeric rules can't see this because no individual list element
+    looks hardcoded in isolation -- only the aggregate shape does."""
+    return isinstance(node, ast.Dict) and len(node.keys) > 0 and \
+        all(v is not None and _is_string_list(v) for v in node.values)
+
+
 def _signed_value(node: ast.AST):
     if _is_number(node):
         return node.value
@@ -94,6 +111,9 @@ def scan_source(source: str, rel_path: str, rules: dict) -> List[Violation]:
                 numeric(c, "comparison")
         elif isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id.isupper() for t in node.targets):
             numeric(node.value, "module_constant")
+            if _is_dict_of_string_lists(node.value):
+                name = next(t.id for t in node.targets if isinstance(t, ast.Name) and t.id.isupper())
+                found.append(Violation(rel_path, node.lineno, "module_dict_of_string_lists", name))
     return found
 
 

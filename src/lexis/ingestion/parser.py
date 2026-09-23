@@ -1,4 +1,5 @@
 import re
+from functools import lru_cache
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from unstructured.partition.pdf import partition_pdf
@@ -8,6 +9,7 @@ from unstructured.partition.text import partition_text
 from unstructured.documents.elements import Element
 
 from lexis.ingestion.interfaces import BaseParser
+from lexis.packs.loader import load_pack
 
 BLOCK_TYPE_MAP = {
     "Title": "title",
@@ -19,17 +21,24 @@ BLOCK_TYPE_MAP = {
     "FigureCaption": "text",
 }
 
-DOC_TYPE_PATTERNS = {
-    "contract": [r"agreement", r"contract", r"amendment", r"covenant"],
-    "10-k": [r"form 10-k", r"annual report", r"item 1a", r"risk factor"],
-    "regulation": [r"whereas", r"hereby", r"regulation", r"statute"],
-    "research": [r"abstract", r"methodology", r"conclusion", r"references"],
-}
+
+@lru_cache(maxsize=1)
+def _default_doc_type_patterns() -> Dict[str, List[str]]:
+    """Falls back to the us_contracts pack when no pack is supplied, so every
+    existing zero-arg LexisParser() call site keeps its current behavior.
+    Cached: this loads+validates a YAML file, and every ingestion path
+    constructs a fresh LexisParser, not just once per process."""
+    pack_path = Path("config/packs/us_contracts.yaml")
+    return load_pack(pack_path).structure.doc_type_patterns
+
 
 class LexisParser(BaseParser):
+    def __init__(self, doc_type_patterns: Optional[Dict[str, List[str]]] = None):
+        self.doc_type_patterns = doc_type_patterns if doc_type_patterns is not None else _default_doc_type_patterns()
+
     def _detect_doc_type(self, text: str) -> str:
         text_lower = text.lower()
-        for doc_type, patterns in DOC_TYPE_PATTERNS.items():
+        for doc_type, patterns in self.doc_type_patterns.items():
             if any(re.search(p, text_lower) for p in patterns):
                 return doc_type
         return "unknown"

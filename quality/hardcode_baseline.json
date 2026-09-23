@@ -84,7 +84,6 @@
     "numeric:comparison": 2
   },
   "ingestion/embedder.py": {
-    "numeric:call_keyword": 1,
     "numeric:comparison": 1
   },
   "ingestion/hype_generator.py": {

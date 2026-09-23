@@ -72,6 +72,23 @@ class StructureSpec(BaseModel):
     chunk_strategy: Literal["semantic", "clause", "paragraph", "section"] = "semantic"
     max_chunk_tokens: Optional[int] = Field(default=None, gt=0)
     parent_context_template: str = ""                  # e.g. "{title} > {path}" injected before embedding
+    # doc_type -> regex patterns (searched case-insensitively against a document's text) used to
+    # classify it at ingestion time. Vocabulary is jurisdiction/language-specific -- e.g. "agreement"
+    # only makes sense for an English-language contracts pack -- so it lives here, not in a shared
+    # module constant. An empty mapping means the pack has not defined doc-type detection yet;
+    # every document then classifies as "unknown", which is honest (not silently wrong).
+    doc_type_patterns: Dict[str, List[str]] = Field(default_factory=dict)
+
+    @field_validator("doc_type_patterns")
+    @classmethod
+    def _patterns_compile(cls, v: Dict[str, List[str]]) -> Dict[str, List[str]]:
+        for doc_type, patterns in v.items():
+            for p in patterns:
+                try:
+                    re.compile(p)
+                except re.error as e:
+                    raise ValueError(f"doc_type_patterns[{doc_type!r}]: pattern {p!r} does not compile: {e}") from e
+        return v
 
 
 class PromptSet(BaseModel):

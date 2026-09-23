@@ -27,6 +27,10 @@ structure:
   levels: [act, chapter, section, sub_section, proviso]
   chunk_strategy: paragraph
   parent_context_template: "{title} > {path}"
+  # NOT YET BUILT: no doc-type classification patterns for this pack. Every document
+  # classifies as "unknown" until this is filled in (deliberately, not silently defaulted
+  # to the US-contracts English vocabulary, which would misclassify Indian filings).
+  doc_type_patterns: {}
 
 prompts:
   system: >-
