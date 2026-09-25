@@ -23,8 +23,16 @@ from lexis.ingestion import hype_generator as hype_generator_module
 from lexis.ingestion.hype_generator import HyPEGenerator
 
 
-def rate_limit_error():
-    return litellm.RateLimitError(message="quota exceeded", llm_provider="gemini", model="gemini-2.5-flash")
+def rate_limit_error(message="quota exceeded, quotaId: GenerateRequestsPerMinutePerProjectPerModel-FreeTier"):
+    return litellm.RateLimitError(message=message, llm_provider="gemini", model="gemini-2.5-flash")
+
+
+def daily_quota_error():
+    # Matches the real shape of a live Gemini free-tier daily-cap error (confirmed in
+    # production use): the quotaId embedded in the message names which quota was hit.
+    return rate_limit_error(
+        message="quota exceeded, quotaId: GenerateRequestsPerDayPerProjectPerModel-FreeTier, quotaValue: 20"
+    )
 
 
 def make_fake_acompletion(captured: dict, questions=("What is the term?", "Who are the parties?", "Is it exclusive?")):
@@ -151,6 +159,77 @@ async def test_rate_limit_error_gives_up_after_exhausting_retries(monkeypatch):
 
     assert questions == []
     assert calls["n"] == 3  # initial attempt + 2 retries, then give up
+
+
+@pytest.mark.asyncio
+async def test_daily_quota_exhaustion_is_not_retried(monkeypatch):
+    """A per-DAY quota will not reset within this run no matter how long a per-minute-style
+    backoff waits -- confirmed live (a real Colab run burned minutes of backoff-and-retry
+    against a 20-requests/day cap before this fix). Must fail on the first attempt, not after
+    exhausting hype_max_retries."""
+    monkeypatch.setattr(settings, "hype_max_retries", 3)
+    monkeypatch.setattr(settings, "hype_retry_backoff_s", 0.001)
+    calls = {"n": 0}
+
+    async def always_daily_exhausted(**kwargs):
+        calls["n"] += 1
+        raise daily_quota_error()
+
+    monkeypatch.setattr(hype_generator_module, "acompletion", always_daily_exhausted)
+
+    gen = HyPEGenerator()
+    questions = await gen.generate_questions("Some chunk text.")
+
+    assert questions == []
+    assert calls["n"] == 1  # no retries burned on a quota that can't reset mid-run
+
+
+@pytest.mark.asyncio
+async def test_daily_quota_exhaustion_short_circuits_every_later_call_on_the_same_instance(monkeypatch):
+    """Once confirmed once, every other chunk's call this run would fail identically --
+    pipeline.py's _build_hype_points calls generate_questions once per chunk (potentially
+    hundreds) via the SAME HyPEGenerator instance, so this must stop making real API calls
+    at all after the first daily-exhaustion, not just stop retrying that one call."""
+    monkeypatch.setattr(settings, "hype_retry_backoff_s", 0.001)
+    calls = {"n": 0}
+
+    async def always_daily_exhausted(**kwargs):
+        calls["n"] += 1
+        raise daily_quota_error()
+
+    monkeypatch.setattr(hype_generator_module, "acompletion", always_daily_exhausted)
+
+    gen = HyPEGenerator()
+    first = await gen.generate_questions("Chunk one.")
+    second = await gen.generate_questions("Chunk two.")
+    third = await gen.generate_questions("Chunk three.")
+
+    assert first == second == third == []
+    assert calls["n"] == 1  # only the first call ever reached acompletion
+
+
+@pytest.mark.asyncio
+async def test_per_minute_rate_limit_is_still_retried_normally_even_after_checking_for_daily(monkeypatch):
+    """Regression: the daily-quota check must not accidentally swallow the existing
+    per-minute retry behavior for a plain rate-limit message."""
+    monkeypatch.setattr(settings, "hype_max_retries", 3)
+    monkeypatch.setattr(settings, "hype_retry_backoff_s", 0.001)
+    calls = {"n": 0}
+
+    async def flaky_acompletion(**kwargs):
+        calls["n"] += 1
+        if calls["n"] < 2:
+            raise rate_limit_error()  # plain per-minute message, no "PerDay"
+        content = json.dumps({"questions": ["Recovered?"]})
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=content))])
+
+    monkeypatch.setattr(hype_generator_module, "acompletion", flaky_acompletion)
+
+    gen = HyPEGenerator()
+    questions = await gen.generate_questions("Some chunk text.")
+
+    assert questions == ["Recovered?"]
+    assert calls["n"] == 2
 
 
 @pytest.mark.asyncio

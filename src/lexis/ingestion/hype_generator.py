@@ -20,6 +20,19 @@ from lexis.ingestion.rate_limiter import AsyncRateLimiter
 logger = logging.getLogger(__name__)
 
 
+def _is_daily_quota_exhaustion(error: Exception) -> bool:
+    """A per-MINUTE rate limit is worth a short backoff retry -- it resets in
+    under a minute. A per-DAY quota exhaustion (confirmed live: some Gemini
+    free-tier keys cap gemini-2.5-flash at as few as 20 requests/day, far
+    below what HyPE needs for even one small document's chunks) will not
+    resolve within this run no matter how long we wait or how many times we
+    retry -- litellm's RateLimitError message embeds the raw API error body,
+    which names the specific quota that was hit (quotaId contains "PerDay"
+    for a daily cap, "PerMinute" for the transient one this class is
+    actually designed to ride out)."""
+    return "PerDay" in str(error)
+
+
 class HyPEGenerator:
     def __init__(self):
         # Shared across every generate_questions() call this instance makes -- pipeline.py
@@ -28,8 +41,17 @@ class HyPEGenerator:
         # bound (see pipeline.py's semaphore) alone is not enough: fast calls can still exceed
         # 20/min even with few in flight at once, confirmed live against Gemini's free tier.
         self._rate_limiter = AsyncRateLimiter(max_per_minute=settings.hype_requests_per_minute)
+        # Once a daily quota exhaustion is confirmed once, every other call sharing the same key
+        # this run will fail identically -- there is no reason to spend a full
+        # retry-with-backoff cycle (and a real API round trip) on each of potentially hundreds
+        # of remaining chunks just to rediscover the same fact. Sticky for this instance's
+        # lifetime (matches its lifetime: one per IngestionPipeline / ingestion run).
+        self._daily_quota_exhausted = False
 
     async def generate_questions(self, chunk_text: str) -> List[str]:
+        if self._daily_quota_exhausted:
+            return []
+
         n = settings.hype_questions_per_chunk
         system_prompt = (
             f"You are an expert search engine query generator. Read the text and generate exactly {n} "
@@ -60,6 +82,14 @@ class HyPEGenerator:
                 data = json.loads(response.choices[0].message.content)
                 return data.get("questions", [])
             except litellm.RateLimitError as e:
+                if _is_daily_quota_exhaustion(e):
+                    self._daily_quota_exhausted = True
+                    logger.warning(
+                        "HyPE question generation hit a DAILY quota limit (not per-minute) -- "
+                        "this will not reset during this run, so no further HyPE calls will be "
+                        f"attempted for the rest of this ingestion. Original error: {e}"
+                    )
+                    return []
                 if attempt < settings.hype_max_retries:
                     backoff = settings.hype_retry_backoff_s * (attempt + 1)
                     logger.warning(f"HyPE question generation rate-limited (attempt {attempt + 1}/"

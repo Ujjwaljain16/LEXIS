@@ -55,11 +55,14 @@ class Settings(BaseSettings):
     # nearly all of them fail with RateLimitError instantly. Bounds how many
     # HyPEGenerator.generate_questions() calls run concurrently.
     hype_max_concurrent_requests: int = 5
-    # A concurrency bound alone does not bound RATE (fast calls still exceed 20/min even with
-    # few in flight at once) -- confirmed live. hype_requests_per_minute paces actual call
-    # starts via a sliding-window limiter, kept below the hard 20/min cap to leave headroom
-    # for other Gemini usage sharing the same key (e.g. feature_extractor.py).
-    hype_requests_per_minute: int = 15
+    # A concurrency bound alone does not bound RATE (fast calls still exceed the per-minute cap
+    # even with few in flight at once) -- confirmed live. hype_requests_per_minute paces actual
+    # call starts via a sliding-window limiter. 5 matches the free-tier gemini-2.5-flash quota
+    # actually observed live (GenerateRequestsPerMinutePerProjectPerModel-FreeTier = 5, not the
+    # 20 originally assumed) -- override upward for a paid tier or a key with a higher quota.
+    # Some free-tier keys also cap at as few as 20 requests/DAY, which no amount of per-minute
+    # pacing can work around; see hype_generator.py's daily-quota-exhaustion short-circuit.
+    hype_requests_per_minute: int = 5
     hype_max_retries: int = 3
     hype_retry_backoff_s: float = 5.0
 
@@ -67,6 +70,12 @@ class Settings(BaseSettings):
     # (local model), so unlike R2/HyPE this is not rate-limited; the cost is query-time latency.
     rerank_enabled: bool = False
     rerank_top_k: int = 50
+
+    # NLI/faithfulness checking (plan section 5, "Real NLI"). 0.5 ("more likely entailed than
+    # not") is a deliberately conservative starting point, not a measured value -- the plan
+    # calls for hand-labeling ~100 legal claims and reporting measured accuracy before treating
+    # any specific threshold as validated (see config/models.yaml's per-NLI-model accuracy notes).
+    nli_entailment_threshold: float = 0.5
 
     # Chunking
     semantic_chunking_threshold: float = 0.4
