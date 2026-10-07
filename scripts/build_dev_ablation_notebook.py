@@ -2,7 +2,7 @@
 Run locally, commit the generated .ipynb. It overwrites the notebook from scratch."""
 import json
 
-PINNED_COMMIT = "48caedf735477430d1f0bd8dd71744e479a69855"
+PINNED_COMMIT = "df4454bbaa66bbc5ff671a58171afa07d8b61717"
 
 
 def code_cell(src):
@@ -86,6 +86,27 @@ os.environ["QDRANT_URL"] = userdata.get("QDRANT_URL")
 os.environ["QDRANT_API_KEY"] = userdata.get("QDRANT_API_KEY")
 os.environ["POSTGRES_URL"] = userdata.get("POSTGRES_URL")
 print("Credentials loaded from Colab Secrets (values not printed).")"""))
+
+cells.append(code_cell("""# Fail fast, with the REAL error, if Qdrant is unreachable (bad secret, typo, suspended cluster).
+import asyncio, os
+from qdrant_client import AsyncQdrantClient
+
+async def _check():
+    client = AsyncQdrantClient(url=os.environ["QDRANT_URL"], api_key=os.environ["QDRANT_API_KEY"] or None, timeout=30)
+    return await client.get_collections()
+
+try:
+    res = await _check()
+    print(f"Qdrant reachable: {len(res.collections)} existing collections. Safe to continue.")
+except Exception as e:
+    raise RuntimeError(
+        f"Qdrant NOT reachable: {type(e).__name__}: {e!r}. "
+        "Fix before continuing: (1) Colab Secrets QDRANT_URL must include https:// and the port, e.g. "
+        "https://<id>.<region>.cloud.qdrant.io:6333 ; (2) QDRANT_API_KEY must be the cluster's key; "
+        "(3) open cloud.qdrant.io and make sure the cluster is Running (free clusters are suspended after "
+        "inactivity and must be resumed)."
+    ) from None
+"""))
 
 cells.append(code_cell("""import subprocess, sys
 import torch
