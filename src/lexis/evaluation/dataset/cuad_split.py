@@ -10,7 +10,7 @@ data that has informed design decisions cannot double as held-out test data.
 Nothing here decides the salt, fractions, or which contracts to pin -- those
 are inputs (config / CLI) so the split policy stays data, not code.
 """
-from typing import Any, Dict, Iterable, List, Mapping
+from typing import Any, Dict, Iterable, List, Mapping, Optional
 
 from lexis.evaluation.dataset.cuad_loader import _answerable_questions
 from lexis.evaluation.dataset.mapping import deterministic_document_id
@@ -88,3 +88,23 @@ def contracts_for_split(raw: Mapping[str, Any], manifest: Mapping[str, Any], spl
             raise ValueError(f"doc_id mismatch for {title!r}: dataset/manifest are out of sync")
         out.append(by_title[title])
     return sorted(out, key=lambda c: c["title"])
+
+
+def cap_split_contracts(contracts: List[Dict[str, Any]], max_contracts: Optional[int],
+                        split_name: str) -> List[Dict[str, Any]]:
+    """First `max_contracts` contracts of a split, in the split's own deterministic order.
+
+    Exists so a dev-set ablation can be large enough to resolve a small effect (50 questions give a
+    +/-0.11 MRR interval, far too wide to separate a +0.05 gain from noise) without ingesting the
+    whole 346-contract dev split. Refused for the held-out test split: that must always be
+    evaluated whole, or "frozen test baseline" stops meaning one specific, comparable set of cases."""
+    if max_contracts is None:
+        return contracts
+    if split_name != "dev":
+        raise ValueError(
+            f"--max-contracts is only allowed on the dev split, not {split_name!r}: the held-out test "
+            "split must always be evaluated in full."
+        )
+    if max_contracts <= 0:
+        raise ValueError("--max-contracts must be positive")
+    return contracts[:max_contracts]

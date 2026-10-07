@@ -56,9 +56,9 @@ carry wide intervals. Only the test-split numbers above are headline results.
 | Rung | Change | Status |
 |---|---|---|
 | Document scoping (user-selected filter) | restrict retrieval to the chosen contract | **shipped and measured** (above) |
-| R1 contextual chunk prefix for BM25 | BM25 now indexes the same "Document / Type / Section" header dense embeddings already used | **shipped**; dev n=50: MRR +0.026 [0.002, 0.059], Holm p = 0.14, Recall@30 flat — *directionally positive, not statistically established at this sample size* |
+| R1 contextual chunk prefix for BM25 | BM25 now indexes the same "Document / Type / Section" header dense embeddings already used | **shipped**; dev n=50, replicated on a second machine (Colab T4) with near-identical numbers: MRR +0.026 [0.002, 0.058], Holm p = 0.16 (9 questions improved, 4 regressed), Recall@30 flat — *directionally positive, not statistically established at this sample size* |
 | R2 HyPE (LLM-generated hypothetical questions) | index-time question generation, third RRF path | wired + tested (rate limiting, retry, daily-quota detection); **not measured** — the free-tier API key allows 20 requests/day, which cannot index even one small document's chunks |
-| R4 cross-encoder rerank (`bge-reranker-v2-m3`) | rerank top-50 of the fused list | wired + tested; **dev measurement pending** — runs on Colab via `notebooks/cuad_doc_scoped_dev_ablation.ipynb` (local 16 GB machine segfaults chunking one large contract) |
+| R4 cross-encoder rerank (`bge-reranker-v2-m3`) | rerank top-50 of the fused list | wired, tested, **measured on dev n=50 — inconclusive**: MRR 0.578 → 0.626 (+0.048, 95% CI [-0.065, +0.156], Holm p = 0.83), Recall@30 +0.004, rank-1 hits 21 → 25 of 50 (17 improved / 12 regressed). Same data hash and commit for both runs; only the flag differs. The interval is too wide to separate a real gain from noise — a larger dev sample is required before claiming anything |
 
 A gain is only claimed when the paired bootstrap CI excludes zero **and** the permutation test passes after Holm
 correction (`lexis.evaluation.stats.claim_supported`). Several rungs above do not clear that bar yet, and the table says so.

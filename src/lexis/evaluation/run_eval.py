@@ -44,7 +44,7 @@ from typing import Dict, List
 
 from lexis.config import settings
 from lexis.evaluation.dataset.cuad_loader import CUADAdapter, CUADLoader, select_contracts
-from lexis.evaluation.dataset.cuad_split import contracts_for_split
+from lexis.evaluation.dataset.cuad_split import cap_split_contracts, contracts_for_split
 from lexis.evaluation.dataset.mapping import deterministic_document_id
 from lexis.evaluation.harness import EvalHarness
 from lexis.evaluation.provenance import build_provenance
@@ -105,6 +105,7 @@ async def run_cuad_benchmark(
     split_manifest: str = None,
     split_name: str = None,
     ingest_checkpoint: str = None,
+    max_contracts: int = None,
 ):
     logger.info(f"Loading CUAD dataset from {cuad_path}")
     raw = CUADLoader().load(cuad_path)
@@ -113,7 +114,7 @@ async def run_cuad_benchmark(
         if not split_name:
             raise ValueError("--split-name is required when --split-manifest is given")
         manifest = json.loads(Path(split_manifest).read_text(encoding="utf-8"))
-        contracts = contracts_for_split(raw, manifest, split_name)
+        contracts = cap_split_contracts(contracts_for_split(raw, manifest, split_name), max_contracts, split_name)
         logger.info(f"Selected {len(contracts)} contracts from split={split_name!r} of manifest {split_manifest!r}.")
     else:
         contracts = select_contracts(raw, num_contracts)
@@ -207,6 +208,7 @@ async def run_cuad_benchmark(
         "bm25_index_dir": settings.bm25_index_dir,
         "split_manifest": split_manifest,
         "split_name": split_name,
+        "max_contracts": max_contracts,
         "contract_titles_used": [c["title"] for c in contracts],
     }
 
@@ -335,6 +337,11 @@ def main():
     )
     arg_parser.add_argument("--split-name", choices=["dev", "test"], default=None, help="Which split to evaluate; required with --split-manifest.")
     arg_parser.add_argument(
+        "--max-contracts", type=int, default=None,
+        help="DEV split only: evaluate just the first N contracts of the split (deterministic order). "
+             "Refused for the test split, which must always be evaluated whole.",
+    )
+    arg_parser.add_argument(
         "--ingest-checkpoint", default=None,
         help="Path to a JSON file tracking which contracts have already been ingested; updated after "
              "each contract so a large ingest run can resume after a crash/disconnect instead of "
@@ -367,7 +374,7 @@ def main():
             args.cuad_path, args.num_contracts, args.max_questions, args.top_k, args.output, args.skip_ingest,
             diagnostics_output=args.diagnostics_output, skip_diagnostics=args.skip_diagnostics,
             protocol=args.protocol, split_manifest=args.split_manifest, split_name=args.split_name,
-            ingest_checkpoint=args.ingest_checkpoint,
+            ingest_checkpoint=args.ingest_checkpoint, max_contracts=args.max_contracts,
         ))
     else:
         raise ValueError(f"Unknown benchmark: {args.benchmark}")
