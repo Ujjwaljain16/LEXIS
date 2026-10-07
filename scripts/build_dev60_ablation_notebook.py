@@ -1,0 +1,242 @@
+"""Generator for notebooks/cuad_doc_scoped_dev_ablation_dev60.ipynb: baseline vs R4 rerank on the first 60
+contracts of the DEV split (795 questions) -- large enough to resolve an effect the 50-question run could not.
+Run locally, commit the generated .ipynb. Never touches the held-out test split."""
+import json
+
+PINNED_COMMIT = "0149eff39702d91db519d0174d2ef81e2091bc3e"
+N_CONTRACTS = 60
+
+
+def code_cell(src):
+    return {"cell_type": "code", "execution_count": None, "metadata": {}, "outputs": [], "source": src}
+
+
+def md_cell(src):
+    return {"cell_type": "markdown", "metadata": {}, "source": src}
+
+
+cells = []
+
+cells.append(md_cell(f"""# LEXIS - dev ablation at scale: baseline vs R4 cross-encoder rerank ({N_CONTRACTS} dev contracts)
+
+**Run top to bottom. Nothing to edit. About 45-90 minutes on a Colab T4.**
+
+**Why this exists:** the 10-contract / 50-question run was inconclusive. R4's MRR gain was +0.048 but its 95% CI was
+[-0.065, +0.156], far too wide to separate a real gain from noise. With the first {N_CONTRACTS} contracts of the dev split
+(795 questions) the same effect would be about 3.4 standard errors, so the result should be decisive either way: a
+clear gain, or a clear "no meaningful effect" (both are publishable findings; neither is tuned for).
+
+**Guardrails:** DEV split only. `--max-contracts` is refused for the test split in code, so the held-out 164 contracts
+cannot be touched from here. Nothing is frozen. R1 (BM25 contextual prefix) is unconditional, so the baseline already
+includes it; R4 is the single flag `RERANK_ENABLED`. HyPE is excluded (needs ~500+ LLM calls; the free Gemini key allows 20/day).
+
+**Pinned commit:** `{PINNED_COMMIT}`. State is fresh by design (new Qdrant collection `..._dev60`, new BM25 dir, new Drive
+folder) and the ingest cell self-heals a stale checkpoint on a recycled VM."""))
+
+cells.append(md_cell("## 0. Setup"))
+
+cells.append(code_cell("""from google.colab import drive
+drive.mount('/content/drive')
+
+import os
+DRIVE_DIR = "/content/drive/MyDrive/lexis_dev60_ablation"
+os.makedirs(DRIVE_DIR, exist_ok=True)
+print("Persistent run directory:", DRIVE_DIR)"""))
+
+cells.append(code_cell(f"""PINNED_COMMIT = "{PINNED_COMMIT}"
+
+import os
+if not os.path.isdir("/content/LEXIS"):
+    !git clone https://github.com/Ujjwaljain16/LEXIS.git /content/LEXIS
+%cd /content/LEXIS
+!git fetch origin
+!git checkout {{PINNED_COMMIT}}
+!pip install -q -e .
+
+checked_out = !git rev-parse HEAD
+checked_out = checked_out[0].strip()
+assert checked_out == PINNED_COMMIT, f"checked out {{checked_out}}, expected {{PINNED_COMMIT}}"
+print("Checked out and verified pinned commit:", checked_out)"""))
+
+cells.append(code_cell("""import subprocess, sys
+
+check = subprocess.run([sys.executable, "-c", "import lexis"], capture_output=True, text=True)
+if check.returncode != 0:
+    raise RuntimeError("`import lexis` failed even in a FRESH subprocess -- install is broken.\\n" + check.stderr)
+try:
+    import lexis  # noqa: F401
+    print("lexis is importable in THIS kernel -- proceed.")
+except ModuleNotFoundError:
+    raise RuntimeError(
+        "lexis installed, but this kernel cannot see it yet (standard Colab gotcha). "
+        "Fix: Runtime -> Restart session, then re-run every cell from the top."
+    ) from None"""))
+
+cells.append(code_cell("""# Needs Colab Secrets: QDRANT_URL, QDRANT_API_KEY, POSTGRES_URL  (no Gemini key needed)
+import os
+from google.colab import userdata
+
+os.environ["QDRANT_URL"] = userdata.get("QDRANT_URL")
+os.environ["QDRANT_API_KEY"] = userdata.get("QDRANT_API_KEY")
+os.environ["POSTGRES_URL"] = userdata.get("POSTGRES_URL")
+print("Credentials loaded from Colab Secrets (values not printed).")"""))
+
+cells.append(code_cell("""# Fail fast, with the REAL error, if Qdrant is unreachable.
+import asyncio, os
+from qdrant_client import AsyncQdrantClient
+
+async def _check():
+    client = AsyncQdrantClient(url=os.environ["QDRANT_URL"], api_key=os.environ["QDRANT_API_KEY"] or None, timeout=30)
+    return await client.get_collections()
+
+try:
+    res = await _check()
+    print(f"Qdrant reachable: {len(res.collections)} existing collections. Safe to continue.")
+except Exception as e:
+    raise RuntimeError(
+        f"Qdrant NOT reachable: {type(e).__name__}: {e!r}. "
+        "Check Colab Secrets QDRANT_URL (https:// + port) and QDRANT_API_KEY, and that the cluster is Running "
+        "at cloud.qdrant.io (free clusters are suspended after inactivity)."
+    ) from None"""))
+
+cells.append(code_cell("""import torch
+print("CUDA available:", torch.cuda.is_available())
+if torch.cuda.is_available():
+    print("GPU:", torch.cuda.get_device_name(0))
+else:
+    print("WARNING: no GPU. Runtime -> Change runtime type -> T4 GPU, restart, and re-run from the top.")"""))
+
+cells.append(code_cell("""from huggingface_hub import hf_hub_download
+
+cuad_path = hf_hub_download(
+    repo_id="theatticusproject--cuad".replace("--", "/"),
+    repo_type="dataset",
+    filename="CUAD_v1/CUAD_v1.json",
+)
+print("CUAD dataset at:", cuad_path)"""))
+
+cells.append(md_cell(f"""## 1. Shared runner (output is streamed so you always see progress)"""))
+
+cells.append(code_cell(f"""import os, subprocess, sys
+
+os.environ["QDRANT_COLLECTION_PRIMARY"] = "chunks_primary_colab_dev60"
+os.environ["BM25_INDEX_DIR"] = "/content/LEXIS/data/bm25_index_colab_dev60"
+os.environ["EMBEDDING_BATCH_SIZE"] = "8"
+os.environ["HYPE_ENABLED"] = "false"
+os.environ["RERANK_ENABLED"] = "false"
+# Keep other GPU libraries Colab preinstalls (TensorFlow/JAX) from grabbing the whole GPU.
+os.environ.update({{
+    "TF_FORCE_GPU_ALLOW_GROWTH": "true", "XLA_PYTHON_CLIENT_PREALLOCATE": "false",
+    "USE_TF": "0", "USE_FLAX": "0", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+}})
+
+SCOPE_ARGS = ["--split-manifest", "evaluation/splits/cuad_split_v1.json", "--split-name", "dev",
+              "--max-contracts", "{N_CONTRACTS}", "--max-questions", "10000"]
+
+def stream(cmd, env=None):
+    \"\"\"Run a command, echoing its output line by line (skipping progress-bar spam).\"\"\"
+    p = subprocess.Popen(cmd, cwd="/content/LEXIS", env=env or os.environ.copy(), stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT, text=True, bufsize=1)
+    for line in p.stdout:
+        if "it/s]" in line or "s/it]" in line or "LiteLLM" in line:
+            continue
+        print(line, end="")
+    return p.wait()
+
+def run_eval(output, extra=(), env=None):
+    if os.path.exists(output):
+        os.remove(output)
+    cmd = [sys.executable, "-m", "lexis.evaluation.run_eval", "--benchmark", "cuad", "--cuad-path", cuad_path,
+           *SCOPE_ARGS, "--top-k", "30", "--protocol", "doc_scoped", "--skip-diagnostics",
+           "--output", output, *extra]
+    code = stream(cmd, env)
+    ok = code == 0 and os.path.exists(output)
+    print(f"[run_eval exit={{code}}] result file written: {{ok}}")
+    return ok
+
+INGEST_CHECKPOINT = f"{{DRIVE_DIR}}/ingest_checkpoint_dev60.json"
+bm25_corpus = os.path.join(os.environ["BM25_INDEX_DIR"], "corpus.jsonl")
+if os.path.exists(INGEST_CHECKPOINT) and not os.path.exists(bm25_corpus):
+    os.remove(INGEST_CHECKPOINT)
+    print("Fresh VM detected (no BM25 index) -> deleted the stale Drive checkpoint; re-ingesting everything.")
+
+assert stream([sys.executable, "scripts/setup_collections.py"]) == 0, "Qdrant collection setup failed (see message above)"
+print("Ready.")"""))
+
+cells.append(md_cell(f"""## 2. Ingest the {N_CONTRACTS} dev contracts (resumable)
+
+Takes roughly 20-40 minutes. If Colab disconnects, reconnect, re-run Setup and the cell above, then re-run this one:
+already-ingested contracts are skipped via the Drive checkpoint (and the self-heal above handles a recycled VM)."""))
+
+cells.append(code_cell("""INGEST_THROWAWAY = f"{DRIVE_DIR}/ingest_pass_throwaway.json"   # this pass's numbers are not used
+ok = run_eval(INGEST_THROWAWAY, extra=["--ingest-checkpoint", INGEST_CHECKPOINT])
+assert ok, "ingest pass failed -- see the error above"
+print("Ingest complete.")"""))
+
+cells.append(md_cell("""## 3. Baseline, then R4 (each is a separate, isolated pass over the same ingested data)
+
+The baseline runs in a fresh process well after ingest, so it is already past any first-query write-visibility lag
+(the ingest pass above is the warm-up). R4 downloads the reranker on first use, tries the GPU, and falls back to CPU
+automatically if the GPU is too full (slower, same ranking logic)."""))
+
+cells.append(code_cell("""BASELINE_OUTPUT = f"{DRIVE_DIR}/dev60_baseline.json"
+os.environ["RERANK_ENABLED"] = "false"
+assert run_eval(BASELINE_OUTPUT), "baseline pass failed -- see the error above"
+print("Baseline written to", BASELINE_OUTPUT)"""))
+
+cells.append(code_cell("""R4_OUTPUT = f"{DRIVE_DIR}/dev60_r4_rerank.json"
+os.environ["RERANK_ENABLED"] = "true"
+ok = run_eval(R4_OUTPUT)
+if not ok:
+    print("GPU attempt failed -> retrying with the reranker on CPU (slower; leave it running).")
+    ok = run_eval(R4_OUTPUT, env=dict(os.environ, RERANK_DEVICE="cpu"))
+assert ok, "R4 produced no result on GPU or CPU -- see the error above"
+print("R4 written to", R4_OUTPUT)"""))
+
+cells.append(md_cell("""## 4. Paired comparison - COPY THIS CELL'S OUTPUT BACK TO ME
+
+R4 vs the baseline on identical questions (paired bootstrap CI + permutation test, Holm-corrected across Recall@30 and
+MRR). A gain only counts if `supported=True`. Whatever it says is the result; nothing is tuned toward a preferred outcome."""))
+
+cells.append(code_cell("""import json
+from lexis.evaluation.stats import paired_comparison, claim_supported, holm_correction
+
+base = json.load(open(BASELINE_OUTPUT)); r4 = json.load(open(R4_OUTPUT))
+bm = {c["case_id"]: c for c in base["per_case"]}; rm = {c["case_id"]: c for c in r4["per_case"]}
+common = sorted(set(bm) & set(rm))
+assert base["provenance"]["git_sha"] == r4["provenance"]["git_sha"], "runs used different code"
+assert base["provenance"]["data_sha256"] == r4["provenance"]["data_sha256"], "runs used different data"
+assert not base["run_config"]["rerank_enabled"] and r4["run_config"]["rerank_enabled"], "flags are not as expected"
+print(f"questions compared: {len(common)} | contracts: {base['run_config']['num_contracts']} | commit {base['provenance']['git_sha'][:7]}")
+print(f"unmapped (excluded) cases: baseline {base['num_cases_unmapped']}, rerank {r4['num_cases_unmapped']}")
+print(f"mean Recall@30: baseline {base['mean_recall_at_k']:.4f} -> rerank {r4['mean_recall_at_k']:.4f}")
+print(f"mean MRR      : baseline {base['mean_reciprocal_rank']:.4f} -> rerank {r4['mean_reciprocal_rank']:.4f}")
+
+rec = paired_comparison([rm[i]["recall_at_k"] for i in common], [bm[i]["recall_at_k"] for i in common], seed=0)
+mrr = paired_comparison([rm[i]["reciprocal_rank"] for i in common], [bm[i]["reciprocal_rank"] for i in common], seed=0)
+p = holm_correction([rec.p_value, mrr.p_value])
+print()
+print("Recall@30 diff=%+.4f  CI[%+.4f,%+.4f]  p_holm=%.4f  improved/regressed/tied=%d/%d/%d  supported=%s" % (
+    rec.mean_diff, rec.ci_lo, rec.ci_hi, p[0], rec.n_improved, rec.n_regressed, rec.n_tied, claim_supported(rec)))
+print("MRR      diff=%+.4f  CI[%+.4f,%+.4f]  p_holm=%.4f  improved/regressed/tied=%d/%d/%d  supported=%s" % (
+    mrr.mean_diff, mrr.ci_lo, mrr.ci_hi, p[1], mrr.n_improved, mrr.n_regressed, mrr.n_tied, claim_supported(mrr)))
+r1b = sum(1 for i in common if bm[i]["reciprocal_rank"] == 1.0); r1r = sum(1 for i in common if rm[i]["reciprocal_rank"] == 1.0)
+print(f"rank-1 hits: baseline {r1b} -> rerank {r1r} of {len(common)}")"""))
+
+cells.append(md_cell("## 5. Download results (optional)"))
+
+cells.append(code_cell("""from google.colab import files
+for path in [BASELINE_OUTPUT, R4_OUTPUT]:
+    files.download(path)"""))
+
+notebook = {
+    "cells": cells,
+    "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
+                 "language_info": {"name": "python"}},
+    "nbformat": 4,
+    "nbformat_minor": 5,
+}
+
+with open("notebooks/cuad_doc_scoped_dev_ablation_dev60.ipynb", "w", encoding="utf-8") as f:
+    json.dump(notebook, f, indent=1)
+print("Wrote notebooks/cuad_doc_scoped_dev_ablation_dev60.ipynb with", len(cells), "cells")
