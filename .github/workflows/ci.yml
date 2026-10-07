@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main, foundation-remediation]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      # CPU-only torch first: sentence-transformers would otherwise resolve the default
+      # CUDA build (several GB) on a runner that has no GPU.
+      - name: Install CPU torch
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install package
+        run: pip install -e ".[dev]"
+
+      - name: Unit tests
+        run: python -m pytest tests/unit -q
+
+      - name: Zero-hardcoding ratchet
+        run: python -m lexis.quality.hardcode_lint
