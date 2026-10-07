@@ -40,7 +40,7 @@ class RetrievalEngine:
         self.embedder = BGEM3Embedder()
         # R4: only constructed (and only then does the ~600MB+ model actually load) when
         # explicitly enabled -- a disabled engine pays zero extra cost.
-        self.reranker = BAAICrossEncoder() if settings.rerank_enabled else None
+        self.reranker = BAAICrossEncoder(device=settings.rerank_device) if settings.rerank_enabled else None
         self.timeout_sec = 2.0  # 2 second max per path
 
     async def _safe_execute(self, task, path_name: str) -> List[Any]:

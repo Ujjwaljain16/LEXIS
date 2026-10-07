@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
+from typing import Optional
 
 class Settings(BaseSettings):
     # LLM
@@ -70,6 +71,9 @@ class Settings(BaseSettings):
     # (local model), so unlike R2/HyPE this is not rate-limited; the cost is query-time latency.
     rerank_enabled: bool = False
     rerank_top_k: int = 50
+    # None = let sentence-transformers pick (CUDA if present). Set "cpu" to keep the ~2.3 GB reranker
+    # off a GPU that is already mostly full (e.g. a shared/partly-occupied Colab T4).
+    rerank_device: Optional[str] = None
 
     # NLI/faithfulness checking (plan section 5, "Real NLI"). 0.5 ("more likely entailed than
     # not") is a deliberately conservative starting point, not a measured value -- the plan

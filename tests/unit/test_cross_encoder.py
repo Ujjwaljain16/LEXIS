@@ -76,3 +76,29 @@ async def test_does_not_mutate_the_input_list_or_its_candidate_objects():
     assert [c.chunk_id for c in original] == original_order
     assert [c.score for c in original] == original_scores
     assert result is not original
+
+
+def test_device_is_forwarded_to_the_underlying_model(monkeypatch):
+    """A Colab T4 that is already mostly full can't also hold the ~2.3 GB reranker on-GPU
+    (live CUDA OOM while loading it); settings.rerank_device="cpu" must actually reach CrossEncoder."""
+    captured = {}
+
+    class FakeCrossEncoder:
+        def __init__(self, model_name, **kwargs):
+            captured["model_name"] = model_name
+            captured.update(kwargs)
+
+    from lexis.reranking import cross_encoder as module
+    monkeypatch.setattr(module, "CrossEncoder", FakeCrossEncoder)
+
+    BAAICrossEncoder(device="cpu")
+    assert captured["device"] == "cpu"
+
+    captured.clear()
+    BAAICrossEncoder()  # default: let sentence-transformers choose
+    assert captured["device"] is None
+
+
+def test_settings_rerank_device_defaults_to_auto():
+    from lexis.config import settings
+    assert settings.rerank_device is None

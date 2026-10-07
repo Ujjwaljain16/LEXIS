@@ -10,11 +10,12 @@ class BAAICrossEncoder(Reranker):
     Uses BAAI/bge-reranker-v2-m3. Highly accurate but computationally expensive.
     Should be applied before Sentence Window Expansion.
     """
-    def __init__(self, model_name: str = "BAAI/bge-reranker-v2-m3", model: Optional[CrossEncoder] = None):
+    def __init__(self, model_name: str = "BAAI/bge-reranker-v2-m3", model: Optional[CrossEncoder] = None,
+                 device: Optional[str] = None):
         # model= lets a test inject a fake without downloading/loading a real ~600MB+ model.
         # Using a smaller cross-encoder for local development speed if needed,
         # but defaulting to bge-reranker-v2-m3 as per plan.
-        self.model = model if model is not None else CrossEncoder(model_name)
+        self.model = model if model is not None else CrossEncoder(model_name, device=device)
 
     async def transform(self, query: Query, candidates: List[Candidate]) -> List[Candidate]:
         if not candidates:
