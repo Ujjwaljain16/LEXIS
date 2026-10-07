@@ -2,7 +2,7 @@
 Run locally, commit the generated .ipynb. It overwrites the notebook from scratch."""
 import json
 
-PINNED_COMMIT = "df4454bbaa66bbc5ff671a58171afa07d8b61717"
+PINNED_COMMIT = "ad8b885e9844d968009706e09fc6845f1fb22bdf"
 
 
 def code_cell(src):
@@ -130,9 +130,10 @@ print("CUAD dataset at:", cuad_path)"""))
 
 cells.append(md_cell("""## 1. Ingest the 10 dev contracts (once)
 
-Resumable via the Drive checkpoint *within this run*: if Colab disconnects, reconnect, re-run Setup, and re-run this cell.
-If you get a **brand-new VM**, delete `ingest_checkpoint_v2.json` in the Drive folder first (see the markdown at the top).
-`EMBEDDING_BATCH_SIZE=8` avoids the T4 out-of-memory crash seen on the 164-contract run."""))
+Safe to re-run from scratch at any time, including on a brand-new VM: the cell below deletes a stale Drive checkpoint
+automatically when this VM has no BM25 index (the checkpoint lives on Drive, the index on the VM disk; trusting it would
+silently drop contracts from keyword search). Re-ingesting is idempotent, so nothing is duplicated.
+`EMBEDDING_BATCH_SIZE=8` and the GPU-memory settings avoid the out-of-memory crashes seen earlier on the T4."""))
 
 cells.append(code_cell("""import os
 os.environ["QDRANT_COLLECTION_PRIMARY"] = "chunks_primary_colab_dev_ablation_v2"
@@ -140,8 +141,18 @@ os.environ["BM25_INDEX_DIR"] = "/content/LEXIS/data/bm25_index_colab_dev_ablatio
 os.environ["EMBEDDING_BATCH_SIZE"] = "8"
 os.environ["HYPE_ENABLED"] = "false"
 os.environ["RERANK_ENABLED"] = "false"
+# Keep other GPU libraries Colab preinstalls (TensorFlow/JAX) from grabbing the whole GPU.
+os.environ.update({
+    "TF_FORCE_GPU_ALLOW_GROWTH": "true", "XLA_PYTHON_CLIENT_PREALLOCATE": "false",
+    "USE_TF": "0", "USE_FLAX": "0", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+})
 INGEST_CHECKPOINT = f"{DRIVE_DIR}/ingest_checkpoint_v2.json"
 INGEST_THROWAWAY_OUTPUT = f"{DRIVE_DIR}/ingest_pass_throwaway.json"  # this pass's numbers are not used
+
+bm25_corpus = os.path.join(os.environ["BM25_INDEX_DIR"], "corpus.jsonl")
+if os.path.exists(INGEST_CHECKPOINT) and not os.path.exists(bm25_corpus):
+    os.remove(INGEST_CHECKPOINT)
+    print("Fresh VM detected (no BM25 index) -> deleted the stale Drive checkpoint; re-ingesting all 10 contracts.")
 
 !python scripts/setup_collections.py"""))
 
@@ -192,22 +203,51 @@ cells.append(code_cell("""# Settle pass -- THIS is the baseline result used belo
 
 print("Baseline (settled) written to", BASELINE_OUTPUT)"""))
 
-cells.append(code_cell("""# R4: cross-encoder rerank (downloads BAAI/bge-reranker-v2-m3 on first use)
+cells.append(code_cell("""# Diagnostic (read-only, ~1 min): where does the GPU memory go? Paste this output back to me too.
+import subprocess, sys
+print("=== GPU before our code runs ===")
+!nvidia-smi --query-gpu=memory.used,memory.total --format=csv
+!nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv
+
+DIAG = '''
+import sys, torch
+def snap(tag):
+    free, total = torch.cuda.mem_get_info()
+    print(f"{tag:26s} device used={(total-free)/2**30:5.2f} GiB | torch allocated={torch.cuda.memory_allocated()/2**30:5.2f} GiB")
+torch.zeros(1).cuda(); snap("after CUDA init")
+import lexis.evaluation.run_eval; snap("after importing lexis")
+print("tensorflow imported:", "tensorflow" in sys.modules, "| jax imported:", "jax" in sys.modules)
+from lexis.ingestion.embedder import get_embedder
+get_embedder(); snap("after loading bge-m3")
+'''
+print("=== step-by-step GPU use inside a fresh process ===")
+subprocess.run([sys.executable, "-c", DIAG])"""))
+
+cells.append(code_cell("""# R4: cross-encoder rerank (downloads BAAI/bge-reranker-v2-m3 on first use).
+# Tries the GPU first; if the GPU is too full for a second model, retries with the reranker on CPU
+# (slower -- tens of minutes -- but the result is the same ranking logic).
+import os, subprocess, sys
 os.environ["RERANK_ENABLED"] = "true"
 R4_OUTPUT = f"{DRIVE_DIR}/dev_r4_rerank.json"
 
-!python -m lexis.evaluation.run_eval \\
-  --benchmark cuad \\
-  --cuad-path {cuad_path} \\
-  --num-contracts 10 \\
-  --max-questions 50 \\
-  --top-k 30 \\
-  --protocol doc_scoped \\
-  --skip-ingest \\
-  --skip-diagnostics \\
-  --output {R4_OUTPUT}
+def run_r4(device):
+    if os.path.exists(R4_OUTPUT):
+        os.remove(R4_OUTPUT)
+    env = dict(os.environ, RERANK_DEVICE=device) if device else dict(os.environ)
+    subprocess.run([sys.executable, "-m", "lexis.evaluation.run_eval", "--benchmark", "cuad",
+                    "--cuad-path", cuad_path, "--num-contracts", "10", "--max-questions", "50",
+                    "--top-k", "30", "--protocol", "doc_scoped", "--skip-ingest", "--skip-diagnostics",
+                    "--output", R4_OUTPUT], env=env, cwd="/content/LEXIS")
+    return os.path.exists(R4_OUTPUT)
 
-print("R4 (rerank) pass written to", R4_OUTPUT)"""))
+print("=== R4 rerank on GPU ===")
+ok = run_r4(None)
+if not ok:
+    print("GPU attempt failed (expected if the GPU is full) -> retrying with the reranker on CPU. "
+          "Slower; leave it running.")
+    ok = run_r4("cpu")
+assert ok, "R4 produced no result file on GPU or CPU -- see the error above"
+print("R4 (rerank) result written to", R4_OUTPUT)"""))
 
 cells.append(md_cell("""## 3. Paired comparison -- COPY THIS CELL'S OUTPUT BACK TO ME
 
