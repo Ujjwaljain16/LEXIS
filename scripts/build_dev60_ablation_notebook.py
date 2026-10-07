@@ -143,12 +143,12 @@ def stream(cmd, env=None):
         print(line, end="")
     return p.wait()
 
-def run_eval(output, extra=(), env=None):
+def run_eval(output, extra=(), env=None, skip_ingest=True):
     if os.path.exists(output):
         os.remove(output)
     cmd = [sys.executable, "-m", "lexis.evaluation.run_eval", "--benchmark", "cuad", "--cuad-path", cuad_path,
            *SCOPE_ARGS, "--top-k", "30", "--protocol", "doc_scoped", "--skip-diagnostics",
-           "--output", output, *extra]
+           "--output", output, *(["--skip-ingest"] if skip_ingest else []), *extra]
     code = stream(cmd, env)
     ok = code == 0 and os.path.exists(output)
     print(f"[run_eval exit={{code}}] result file written: {{ok}}")
@@ -169,7 +169,7 @@ Takes roughly 20-40 minutes. If Colab disconnects, reconnect, re-run Setup and t
 already-ingested contracts are skipped via the Drive checkpoint (and the self-heal above handles a recycled VM)."""))
 
 cells.append(code_cell("""INGEST_THROWAWAY = f"{DRIVE_DIR}/ingest_pass_throwaway.json"   # this pass's numbers are not used
-ok = run_eval(INGEST_THROWAWAY, extra=["--ingest-checkpoint", INGEST_CHECKPOINT])
+ok = run_eval(INGEST_THROWAWAY, extra=["--ingest-checkpoint", INGEST_CHECKPOINT], skip_ingest=False)
 assert ok, "ingest pass failed -- see the error above"
 print("Ingest complete.")"""))
 
