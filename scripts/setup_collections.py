@@ -10,6 +10,7 @@ index directory is created lazily on first ingestion by LexisBM25Index.
 Expected Impact: Idempotent initialization of required search infrastructure.
 """
 import asyncio
+import sys
 
 from lexis.config import settings
 from lexis.indexing.qdrant_client import LexisQdrantClient
@@ -22,7 +23,12 @@ async def main():
         await qdrant.initialize_collections()
         print("✅ Qdrant Collections initialized: primary, hype, propositions, clusters")
     except Exception as e:
-        print(f"❌ Failed to initialize Qdrant: {e}")
+        # repr, not str: connection failures (timeouts, refused, auth) often have an EMPTY str(),
+        # which previously printed a useless "Failed to initialize Qdrant: " with no hint at all.
+        print(f"❌ Failed to initialize Qdrant: {type(e).__name__}: {e!r}")
+        print("   Check QDRANT_URL / QDRANT_API_KEY (include https:// and the port), and that the "
+              "Qdrant Cloud cluster is running (free clusters are suspended after inactivity).")
+        sys.exit(1)
 
     print(f"BM25 index directory: {settings.bm25_index_dir} (created automatically on first ingestion, no separate init needed)")
 

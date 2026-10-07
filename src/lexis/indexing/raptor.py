@@ -14,8 +14,6 @@ import uuid
 import numpy as np
 from typing import List, Dict, Any, Tuple
 from litellm import acompletion
-from sklearn.mixture import GaussianMixture
-import umap
 
 from lexis.config import settings
 from lexis.indexing.schema import Chunk, ClusterSummary
@@ -37,7 +35,14 @@ class LexisRaptor:
         if n_samples <= 2:
             # Too few samples to cluster properly, assign them all to one cluster
             return np.zeros(n_samples, dtype=int)
-            
+
+        # Imported here, not at module level: importing umap pulls in TensorFlow (via
+        # umap.parametric_umap), which is slow, memory-hungry, and on Colab crashes outright on a
+        # protobuf version conflict. pipeline.py imports this module on every ingestion and
+        # evaluation run, none of which ever call RAPTOR clustering.
+        import umap
+        from sklearn.mixture import GaussianMixture
+
         # 1. Dimensionality Reduction (UMAP)
         # Adjust n_neighbors if there are very few samples
         actual_n_neighbors = min(n_neighbors, n_samples - 1)
