@@ -2,67 +2,44 @@ import uuid
 import json
 import asyncio
 import logging
-import os
 from fastapi import APIRouter, Request, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from lexis.config import settings
-from lexis.serving.models import BaseLexisResponse, DeepModeEnqueueRequest, JobState
+from lexis.serving.models import AnswerRequest, BaseLexisResponse, DeepModeEnqueueRequest, JobState
 from lexis.serving.telemetry import LexisTracer, get_trace_id
 from lexis.serving.redis_manager import RedisManager
 
 from lexis.retrieval.hybrid_retriever import RetrievalEngine
-from lexis.generation.context_assembler import ContextAssembler
 from lexis.generation.synthesizer import LexisSynthesizer
-from lexis.reranking.sentence_window import SentenceWindowExpansion
-from lexis.generation.crag_router import route_crag
-from lexis.retrieval.interfaces import Candidate
-from lexis.indexing.qdrant_client import LexisQdrantClient
+from lexis.serving.security import SlidingWindowLimiter, rate_limit_dependency
+from lexis.serving.service import AnswerEvent, AnswerService, EngineRetriever
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/query", tags=["Query"])
 
-engine_fast = None
-assembler_fast = None
-synthesizer_fast = None
+_answer_service = None
 
-def get_fast_components():
-    global engine_fast, assembler_fast, synthesizer_fast
-    if engine_fast is None:
-        engine_fast = RetrievalEngine()
-        assembler_fast = ContextAssembler()
-        synthesizer_fast = LexisSynthesizer()
-    return engine_fast, assembler_fast, synthesizer_fast
 
-qdrant_client_instance = None
-def get_qdrant_client():
-    global qdrant_client_instance
-    if qdrant_client_instance is None:
-        qdrant_client_instance = LexisQdrantClient()
-    return qdrant_client_instance
-
-async def fetch_chunk(doc_id: str, chunk_index: int) -> Candidate:
-    """Looks up a chunk by its document-relative position. Chunk ids are content-derived
-    hashes (see Chunk.create), so neighbours must be found by (doc_id, chunk_index) payload
-    match rather than by id."""
-    qdrant = get_qdrant_client()
-    records = await qdrant.find_by_payload(
-        settings.qdrant_collection_primary,
-        {"doc_id": doc_id, "chunk_index": chunk_index},
-        limit=1,
-    )
-    if records:
-        rec = records[0]
-        return Candidate(
-            chunk_id=rec.payload.get("chunk_id") or str(rec.id),
-            score=1.0,
-            source_path=rec.payload.get("source_file", ""),
-            metadata=rec.payload,
-            content=rec.payload.get("content", "")
+def get_answer_service() -> AnswerService:
+    """Process-wide service. Built lazily (the embedder and, if enabled, reranker load on first
+    use); tests and alternative deployments replace it with app.dependency_overrides."""
+    global _answer_service
+    if _answer_service is None:
+        _answer_service = AnswerService(
+            retriever=EngineRetriever(RetrievalEngine()),
+            generator=LexisSynthesizer(),
+            verifier=_build_verifier(),
         )
-    return None
+    return _answer_service
 
-sentence_expander = SentenceWindowExpansion(fetch_chunk_fn=fetch_chunk, window_size=1)
+
+def _build_verifier():
+    if not settings.answer_verify_claims:
+        return None
+    from lexis.evaluation.nli_checker import NLIChecker
+    return NLIChecker()
+
 
 redis_manager = None
 def get_redis():
@@ -71,75 +48,31 @@ def get_redis():
         redis_manager = RedisManager()
     return redis_manager
 
-async def verify_api_key(request: Request):
-    api_key = request.headers.get("X-API-Key")
-    expected_key = os.getenv("LEXIS_API_KEY", "dev_secret_key")
-    if api_key != expected_key:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    return "tenant_123"
 
-async def rate_limit_fast():
-    pass
+_fast_limiter = SlidingWindowLimiter(settings.rate_limit_fast_per_window, settings.rate_limit_window_s)
+_deep_limiter = SlidingWindowLimiter(settings.rate_limit_deep_per_window, settings.rate_limit_window_s)
+rate_limit_fast = rate_limit_dependency(_fast_limiter)
+rate_limit_deep = rate_limit_dependency(_deep_limiter)
 
-async def rate_limit_deep():
-    pass
 
-@router.post("/fast", dependencies=[Depends(verify_api_key), Depends(rate_limit_fast)])
-async def query_fast(req: DeepModeEnqueueRequest, request: Request):
-    """Executes fast-mode retrieval, streaming SSE responses via real retrieval stack."""
+def _sse(event: AnswerEvent) -> str:
+    return f"event: {event.type}\ndata: {json.dumps(event.data)}\n\n"
+
+
+@router.post("/fast", dependencies=[Depends(rate_limit_fast)])
+async def query_fast(req: AnswerRequest, service: AnswerService = Depends(get_answer_service)):
+    """Cited, streamed answer (SSE). Event contract: see lexis/serving/service.py."""
     trace_id = get_trace_id()
-    eng, asm, syn = get_fast_components()
 
     async def event_generator():
-        try:
-            with LexisTracer.start_span("fast_mode_query"):
-                yield f"event: status\ndata: {json.dumps({'status': 'RETRIEVAL', 'trace_id': trace_id})}\n\n"
-                candidates = await eng.retrieve(req.query, top_k_per_path=5, top_n_rrf=15)
-                
-                max_score = candidates[0].get("rrf_score", 0.0) if candidates else 0.0
-                if max_score == 0.0 and candidates and "score" in candidates[0]:
-                    max_score = candidates[0]["score"]
-                candidates = await route_crag(req.query, candidates, max_score)
-
-                yield f"event: status\ndata: {json.dumps({'status': 'RERANK_PHASE', 'trace_id': trace_id})}\n\n"
-                reranked_chunks = asm.rerank_only(req.query, candidates, top_k=5)
-                
-                candidates_to_expand = []
-                for c in reranked_chunks:
-                    c_obj = Candidate(
-                        chunk_id=c.get("payload", {}).get("chunk_id", ""),
-                        # ContextAssembler.rerank_only writes the CrossEncoder score under
-                        # "_relevance_score" (see generation/context_assembler.py), not
-                        # "cross_encoder_score" -- that key is never produced here. -999.0
-                        # matches ContextAssembler's own sentinel for "no score computed"
-                        # (used when its reranker failed to load), so a missing score isn't
-                        # mistaken for a real low-but-valid CrossEncoder value.
-                        score=c.get("_relevance_score", -999.0),
-                        source_path=c.get("payload", {}).get("source_file", ""),
-                        metadata=c.get("payload", {}),
-                        content=c.get("payload", {}).get("content", "")
-                    )
-                    candidates_to_expand.append(c_obj)
-                    
-                expanded_candidates = await sentence_expander.transform(req.query, candidates_to_expand)
-                
-                final_chunks = []
-                for ec in expanded_candidates:
-                    final_chunks.append({"payload": ec.metadata, "content": ec.content, "chunk_id": ec.chunk_id})
-                
-                yield f"event: status\ndata: {json.dumps({'status': 'SYNTHESIS', 'trace_id': trace_id})}\n\n"
-                
-                async for token in syn.stream_answer(req.query, final_chunks):
-                    yield f"event: progress\ndata: {json.dumps({'token': token})}\n\n"
-                
-                yield "event: completed\ndata: {}\n\n"
-        except Exception as e:
-            logger.error(f"Fast Mode Error: {e}", exc_info=True)
-            yield f"event: failed\ndata: {json.dumps({'error': str(e)})}\n\n"
+        with LexisTracer.start_span("fast_mode_query"):
+            yield f"event: trace\ndata: {json.dumps({'trace_id': trace_id})}\n\n"
+            async for event in service.stream(req.query, req.document_ids):
+                yield _sse(event)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
-@router.post("/deep", response_model=BaseLexisResponse, dependencies=[Depends(verify_api_key), Depends(rate_limit_deep)])
+@router.post("/deep", response_model=BaseLexisResponse, dependencies=[Depends(rate_limit_deep)])
 async def query_deep_enqueue(req: DeepModeEnqueueRequest, background_tasks: BackgroundTasks):
     job_id = f"job_{uuid.uuid4().hex}"
     with LexisTracer.start_span("deep_mode_enqueue"):

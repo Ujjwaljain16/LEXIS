@@ -11,7 +11,7 @@ import pytest
 
 from lexis.config import settings
 from lexis.evaluation.doc_routing import document_scores, vote_document
-from lexis.evaluation.scoped_retrieval import retrieve_scoped
+from lexis.retrieval.scoped import retrieve_scoped
 from lexis.retrieval.fusion import apply_rrf
 
 K = 61
@@ -137,7 +137,7 @@ def test_final_chunks_have_the_same_shape_as_the_unscoped_trace():
 
 
 def test_scoped_module_never_calls_production_retrieve_or_mutates_settings():
-    import lexis.evaluation.scoped_retrieval as m
+    import lexis.retrieval.scoped as m
     src = inspect.getsource(m)
     code = "\n".join(l for l in src.splitlines() if not l.strip().startswith(("#", '"""')))
     assert "settings." in code and "settings.rrf_k" in code

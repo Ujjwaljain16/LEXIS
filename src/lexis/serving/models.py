@@ -1,6 +1,8 @@
 from enum import Enum
 from pydantic import BaseModel, Field
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, List
+
+from lexis.config import settings
 
 class JobState(str, Enum):
     QUEUED = "QUEUED"
@@ -40,3 +42,10 @@ class DeepModeEnqueueRequest(BaseModel):
     query: str
     metadata_filters: Dict[str, Any] = Field(default_factory=dict)
 
+
+
+class AnswerRequest(BaseModel):
+    """Fast-mode request. `document_ids` restricts retrieval to those documents (the measured
+    document-scoping lever); omit it to search the whole corpus."""
+    query: str = Field(min_length=1, max_length=settings.api_max_query_chars)
+    document_ids: Optional[List[str]] = Field(default=None, max_length=settings.api_max_document_ids)

@@ -1,5 +1,5 @@
 """
-Regression tests for evaluation/scoped_retrieval.py's R4 rerank wiring.
+Regression tests for retrieval/scoped.py's R4 rerank wiring.
 
 This is the doc_scoped protocol used by the frozen CUAD test baseline, so
 rerank must operate on the already-scoped fused candidates (never pulling
@@ -15,7 +15,7 @@ import numpy as np
 import pytest
 
 from lexis.config import settings
-from lexis.evaluation.scoped_retrieval import retrieve_scoped
+from lexis.retrieval.scoped import retrieve_scoped
 
 DOCS = {"d1": ["c1", "c2"], "d2": ["c3"]}
 CHUNK_DOC = {c: d for d, cs in DOCS.items() for c in cs}

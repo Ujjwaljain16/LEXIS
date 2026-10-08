@@ -81,6 +81,28 @@ class Settings(BaseSettings):
     # any specific threshold as validated (see config/models.yaml's per-NLI-model accuracy notes).
     nli_entailment_threshold: float = 0.5
 
+    # Answer path (serving/service.py). Retrieval stays hybrid + RRF exactly as evaluated; these
+    # only size how much of the fused list reaches the generator.
+    answer_top_k_per_path: int = 15
+    answer_top_n_fused: int = 15
+    answer_context_chunks: int = 5
+    # Claim-level support check on the finished answer (NLI). Off by default: it loads a second
+    # model, and its accuracy on legal text is not yet measured (see nli_entailment_threshold).
+    answer_verify_claims: bool = False
+    answer_temperature: float = 0.1
+    api_max_query_chars: int = 4000
+    api_max_document_ids: int = 50
+
+    # API security. LEXIS_API_KEYS="key1:tenantA,key2:tenantB". Empty = fail closed (503) unless
+    # auth_disabled is set explicitly, which is for local development only.
+    lexis_api_keys: str = ""
+    auth_disabled: bool = False
+    # Ingest accepts server-side paths; they must resolve inside this directory (no traversal).
+    ingest_root_dir: str = "data/uploads"
+    rate_limit_window_s: float = 60.0
+    rate_limit_fast_per_window: int = 30
+    rate_limit_deep_per_window: int = 5
+
     # Chunking
     semantic_chunking_threshold: float = 0.4
     chunk_target_tokens: int = 500

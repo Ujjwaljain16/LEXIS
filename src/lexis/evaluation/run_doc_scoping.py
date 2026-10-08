@@ -37,7 +37,7 @@ from lexis.evaluation.doc_routing import vote_document
 from lexis.evaluation.frozen_scope import load_frozen_scope
 from lexis.evaluation.oracle_case_level import CaseOracleAnalysis, analyze_ranked_case, call_until_healthy, summarize_blockers
 from lexis.evaluation.provenance import build_provenance
-from lexis.evaluation.scoped_retrieval import retrieve_scoped
+from lexis.retrieval.scoped import retrieve_scoped
 from lexis.evaluation.stats import bootstrap_ci, holm_correction, paired_comparison
 from lexis.registry.layered_config import load_yaml
 from lexis.retrieval.hybrid_retriever import RetrievalEngine

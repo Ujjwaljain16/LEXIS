@@ -10,6 +10,8 @@ import re
 from litellm import acompletion
 from typing import AsyncGenerator, List, Dict, Any, Set
 from lexis.config import settings
+from lexis.generation.grounding import ABSTENTION_MARKER, SourceRef, format_context
+from lexis.generation.prompts import GROUNDED_ANSWER_SYSTEM_PROMPT, GROUNDED_ANSWER_USER_PROMPT
 
 class LexisSynthesizer:
     def __init__(self):
@@ -96,3 +98,23 @@ class LexisSynthesizer:
                 
         except Exception as e:
             yield f"\n\n[Error during synthesis: {str(e)}]"
+
+    async def stream_grounded(self, query: str, sources: List[SourceRef]) -> AsyncGenerator[str, None]:
+        """Streams an answer that cites the numbered `sources` as [n]. Tokens are yielded as they
+        arrive; the caller resolves/validates the citations on the finished text (see
+        generation/grounding.py), so a hallucinated number can never reach a user. Errors
+        propagate to the caller -- an answer path must not turn an LLM failure into answer text."""
+        stream = await acompletion(
+            model=settings.gemini_model_synthesis,
+            api_key=settings.gemini_api_key,
+            messages=[
+                {"role": "system", "content": GROUNDED_ANSWER_SYSTEM_PROMPT.format(abstention_marker=ABSTENTION_MARKER)},
+                {"role": "user", "content": GROUNDED_ANSWER_USER_PROMPT.format(context=format_context(sources), query=query)},
+            ],
+            temperature=settings.answer_temperature,
+            stream=True,
+        )
+        async for chunk in stream:
+            token = chunk.choices[0].delta.content
+            if token:
+                yield token

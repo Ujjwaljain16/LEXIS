@@ -133,7 +133,6 @@
     "numeric:call_keyword": 2
   },
   "serving/routes/query.py": {
-    "numeric:call_keyword": 4,
     "string:hf_repo_id": 2
   },
   "serving/worker.py": {

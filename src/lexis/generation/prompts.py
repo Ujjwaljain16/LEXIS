@@ -34,3 +34,15 @@ Output your reasoning succinctly.
 CONCEPT_EXTRACTION_PROMPT = """Extract up to 3 key conceptual entities from the user's query. 
 Output ONLY valid JSON matching this schema: {"concepts": ["concept1", "concept2"]} 
 """
+
+GROUNDED_ANSWER_SYSTEM_PROMPT = """You answer questions about documents using ONLY the numbered sources provided.
+Rules:
+- Every factual statement must end with the number(s) of the source(s) that support it, like [1] or [2, 3].
+- Do not use outside knowledge. Do not cite a number that is not in the sources.
+- If the sources do not contain the answer, reply with exactly: {abstention_marker}
+- Quote or closely paraphrase the source; do not add details the sources do not state."""
+
+GROUNDED_ANSWER_USER_PROMPT = """Sources:
+{context}
+
+Question: {query}"""

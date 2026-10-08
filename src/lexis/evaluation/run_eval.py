@@ -48,7 +48,7 @@ from lexis.evaluation.dataset.cuad_split import cap_split_contracts, contracts_f
 from lexis.evaluation.dataset.mapping import deterministic_document_id
 from lexis.evaluation.harness import EvalHarness
 from lexis.evaluation.provenance import build_provenance
-from lexis.evaluation.scoped_retrieval import retrieve_scoped
+from lexis.retrieval.scoped import retrieve_scoped
 from lexis.indexing.schema import Chunk
 from lexis.ingestion.chunker import SemanticChunker
 from lexis.ingestion.embedder import BGEM3Embedder
