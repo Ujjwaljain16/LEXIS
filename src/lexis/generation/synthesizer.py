@@ -107,6 +107,7 @@ class LexisSynthesizer:
         stream = await acompletion(
             model=settings.gemini_model_synthesis,
             api_key=settings.gemini_api_key,
+            api_base=settings.llm_api_base,
             messages=[
                 {"role": "system", "content": GROUNDED_ANSWER_SYSTEM_PROMPT.format(abstention_marker=ABSTENTION_MARKER)},
                 {"role": "user", "content": GROUNDED_ANSWER_USER_PROMPT.format(context=format_context(sources), query=query)},

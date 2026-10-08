@@ -6,6 +6,8 @@ Every collaborator is passed in, so the whole path is unit-testable with fakes a
 thin SSE adapter. Event contract (what a client can rely on):
 
   status        {"stage": "RETRIEVAL" | "SYNTHESIS" | "VERIFYING"}
+  context       {"chunk_ids": [...]}                 the chunks actually shown to the model, in order
+                                                    (lets an evaluation ask "was the evidence in the prompt?")
   token         {"text": ...}                       live generator output (may contain unresolved
                                                     [n] markers -- display only)
   answer        {"text", "invalid_citation_indices"} authoritative final text, citations validated
@@ -83,6 +85,7 @@ class AnswerService:
                 yield AnswerEvent("completed", {})
                 return
 
+            yield AnswerEvent("context", {"chunk_ids": [s.chunk_id for s in sources]})
             yield AnswerEvent("status", {"stage": "SYNTHESIS"})
             raw_parts: List[str] = []
             pending = ""
