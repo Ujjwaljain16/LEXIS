@@ -66,6 +66,7 @@ carry wide intervals. Only the test-split numbers above are headline results.
 | R1 contextual chunk prefix for BM25 | BM25 now indexes the same "Document / Type / Section" header dense embeddings already used | **shipped**; dev n=50, replicated on a second machine (Colab T4) with near-identical numbers: MRR +0.026 [0.002, 0.058], Holm p = 0.16 (9 questions improved, 4 regressed), Recall@30 flat — *directionally positive, not statistically established at this sample size* |
 | R2 HyPE (LLM-generated hypothetical questions) | index-time question generation, third RRF path | wired + tested (rate limiting, retry, daily-quota detection); **not measured** — the free-tier API key allows 20 requests/day, which cannot index even one small document's chunks |
 | R4 cross-encoder rerank (`bge-reranker-v2-m3`) | rerank top-50 of the fused list | wired, tested, **measured on dev (60 contracts, 766 questions): MRR gain supported** — MRR 0.501 → 0.548 (+0.047, 95% CI [+0.021, +0.073], Holm p = 0.0022), rank-1 hits 290 → 334 of 766, 259 questions improved / 193 regressed. Recall@30 0.817 → 0.832 (+0.015, CI [-0.000, +0.031], Holm p = 0.059) is **not** supported — reranking reorders the top-50 and barely changes what is retrieved. Same data hash and commit for both runs; only the flag differs. The earlier n=50 pilot had the same point estimate (+0.048) but a CI spanning zero. Measured on dev only; the frozen test numbers above are the baseline (no rerank), and R4 is default-off |
+| R7 document-preamble prior (document-scoped only) | add each scoped document's first 2 chunks as one more RRF list, aimed at the weak front-matter questions (title, parties, dates) | wired, tested, default off; **not yet measured**. Chosen from a dev-only analysis: 82-91% of Document Name / Parties / Agreement Date answers start in the first 2,000 characters (vs 5-15% for clause categories). Pre-specified single arm (N=2) on 60 dev contracts, with a no-regression check on clause questions: `notebooks/cuad_doc_scoped_dev_ablation_r7.ipynb` |
 
 A gain is only claimed when the paired bootstrap CI excludes zero **and** the permutation test passes after Holm
 correction (`lexis.evaluation.stats.claim_supported`). Several rungs above do not clear that bar yet, and the table says so.
@@ -89,7 +90,7 @@ restrictions are generated into [`docs/COMPLIANCE.md`](docs/COMPLIANCE.md).
 |---|---|
 | Time to first token / total latency (P50/P95) | **not measured** — `loadtest/locustfile.py` is ready; needs a deployed target |
 | Cost per query | **not measured** |
-| Answer quality (citation precision, abstention accuracy, faithfulness) | **not measured** — needs LLM quota beyond the free tier |
+| Answer quality (citation hit/precision, abstention on CUAD's unanswerable questions, latency) | harness and Colab notebook built and unit-tested (`lexis.evaluation.run_answer_eval`, `notebooks/cuad_answer_eval_dev.ipynb`); **not yet run** — needs an LLM key with real quota |
 
 ## How the evaluation is kept honest
 
@@ -106,7 +107,7 @@ restrictions are generated into [`docs/COMPLIANCE.md`](docs/COMPLIANCE.md).
   names, URLs, tunable numbers and classification tables; the violation count (currently 111) may only go down, and the
   baseline is enforced by a unit test and CI. Jurisdiction-specific vocabulary lives in YAML packs (`config/packs/`), model choices in a licence-aware
   registry (`config/models.yaml`).
-- **680 unit tests**, including a test that audits every import against declared dependencies (it exists because a fresh
+- **700 unit tests**, including a test that audits every import against declared dependencies (it exists because a fresh
   Colab install exposed five undeclared ones).
 
 ## Architecture
