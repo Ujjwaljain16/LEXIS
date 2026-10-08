@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LEXIS</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #ffffff; --text: #1d1d1b; --muted: #6b6b66; --line: #e3e2dc;
+    --accent: #2a5bd7; --accent-weak: #e8eefc; --ok: #1f7a4d; --ok-weak: #e3f4ea;
+    --warn: #9a5b00; --warn-weak: #fdf0d9; --bad: #b3261e; --bad-weak: #fbe6e4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141416; --panel: #1e1e22; --text: #ececea; --muted: #9a9a94; --line: #2f2f35;
+      --accent: #8aa9ff; --accent-weak: #232b44; --ok: #6fcf9a; --ok-weak: #1b2f25;
+      --warn: #f0b95c; --warn-weak: #382c15; --bad: #ff8a80; --bad-weak: #3a1f1d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 820px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 22px; letter-spacing: .14em; margin: 0; }
+  .sub { color: var(--muted); margin: 4px 0 24px; font-size: 14px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 0 0 4px; }
+  input, textarea { width: 100%; font: inherit; color: var(--text); background: var(--bg);
+                    border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+  textarea { resize: vertical; min-height: 84px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  @media (max-width: 600px) { .row { grid-template-columns: 1fr; } }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 8px; padding: 10px 18px;
+           background: var(--accent); color: #fff; font-weight: 600; }
+  button:disabled { opacity: .5; cursor: progress; }
+  @media (prefers-color-scheme: dark) { button { color: #0d1020; } }
+  .status { font-size: 13px; color: var(--muted); margin: 12px 0 0; min-height: 20px; }
+  .answer { white-space: pre-wrap; }
+  .answer .cite { color: var(--accent); background: var(--accent-weak); border: 0; border-radius: 4px;
+                  padding: 0 5px; margin: 0 1px; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .banner { border-radius: 8px; padding: 10px 12px; font-size: 14px; margin-bottom: 12px; }
+  .banner.warn { background: var(--warn-weak); color: var(--warn); }
+  .banner.bad { background: var(--bad-weak); color: var(--bad); }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 10px; }
+  .source { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; background: var(--bg); }
+  .source.hit { border-color: var(--accent); background: var(--accent-weak); }
+  .source .meta { font-size: 12px; color: var(--muted); margin-bottom: 4px; word-break: break-all; }
+  .source .meta b { color: var(--accent); }
+  .source .text { white-space: pre-wrap; font-size: 14px; }
+  .claim { display: flex; gap: 8px; align-items: baseline; font-size: 14px; padding: 4px 0; }
+  .tag { flex: none; font-size: 11px; font-weight: 700; border-radius: 4px; padding: 1px 6px; }
+  .tag.supported { background: var(--ok-weak); color: var(--ok); }
+  .tag.unsupported { background: var(--bad-weak); color: var(--bad); }
+  .tag.uncited { background: var(--warn-weak); color: var(--warn); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>LEXIS</h1>
+  <p class="sub">Questions about your documents, answered only from the text — every claim cites the exact passage.</p>
+
+  <section class="panel">
+    <div class="row">
+      <div>
+        <label for="key">API key</label>
+        <input id="key" type="password" autocomplete="off" placeholder="X-API-Key">
+      </div>
+      <div>
+        <label for="docs">Restrict to documents (optional)</label>
+        <input id="docs" placeholder="doc-1a2b…, doc-3c4d…">
+        <div class="hint">Comma-separated document ids. Scoping to the right document is the largest measured retrieval gain.</div>
+      </div>
+    </div>
+    <label for="q">Question</label>
+    <textarea id="q" placeholder="e.g. What is the governing law of this agreement?"></textarea>
+    <div style="margin-top:12px"><button id="ask">Ask</button></div>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+  </section>
+
+  <section class="panel" id="answerPanel" hidden>
+    <h2>Answer</h2>
+    <div id="banner"></div>
+    <div class="answer" id="answer"></div>
+  </section>
+
+  <section class="panel" id="verifyPanel" hidden>
+    <h2>Claim check <span style="text-transform:none;letter-spacing:0">(automated NLI; accuracy on legal text not yet measured)</span></h2>
+    <div id="claims"></div>
+  </section>
+
+  <section class="panel" id="sourcesPanel" hidden>
+    <h2>Sources</h2>
+    <div id="sources"></div>
+  </section>
+</main>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const keyInput = $("key");
+try { keyInput.value = sessionStorage.getItem("lexis_key") || ""; } catch (_) {}
+
+const STAGES = { RETRIEVAL: "Searching…", SYNTHESIS: "Writing answer…", VERIFYING: "Checking claims…" };
+
+function reset() {
+  for (const id of ["answerPanel", "verifyPanel", "sourcesPanel"]) $(id).hidden = true;
+  $("banner").replaceChildren(); $("answer").replaceChildren();
+  $("claims").replaceChildren(); $("sources").replaceChildren();
+}
+
+function banner(kind, text) {
+  const d = document.createElement("div");
+  d.className = "banner " + kind; d.textContent = text;
+  $("banner").replaceChildren(d); $("answerPanel").hidden = false;
+}
+
+// Render answer text with [n] markers as buttons that highlight the matching source card.
+// Only textContent / DOM nodes are used -- model output is never interpreted as HTML.
+function renderAnswer(text) {
+  const root = $("answer"); root.replaceChildren();
+  const re = /\[(\d+(?:\s*,\s*\d+)*)\]/g; let last = 0, m;
+  while ((m = re.exec(text))) {
+    root.append(text.slice(last, m.index));
+    for (const n of m[1].split(",").map((s) => s.trim())) {
+      const b = document.createElement("button");
+      b.className = "cite"; b.textContent = n; b.title = "Show source " + n;
+      b.addEventListener("click", () => highlight(n));
+      root.append(b);
+    }
+    last = re.lastIndex;
+  }
+  root.append(text.slice(last));
+}
+
+function highlight(n) {
+  document.querySelectorAll(".source").forEach((el) => el.classList.toggle("hit", el.dataset.n === String(n)));
+  const el = document.querySelector('.source[data-n="' + n + '"]');
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function renderSources(cites) {
+  const root = $("sources"); root.replaceChildren();
+  for (const c of cites) {
+    const card = document.createElement("div"); card.className = "source"; card.dataset.n = c.index;
+    const meta = document.createElement("div"); meta.className = "meta";
+    const b = document.createElement("b"); b.textContent = "[" + c.index + "]";
+    meta.append(b, " " + c.doc_id + (c.page_num != null ? " · page " + c.page_num : "") + (c.doc_type ? " · " + c.doc_type : ""));
+    const t = document.createElement("div"); t.className = "text"; t.textContent = c.text;
+    card.append(meta, t); root.append(card);
+  }
+  $("sourcesPanel").hidden = cites.length === 0;
+}
+
+function renderClaims(report) {
+  const root = $("claims"); root.replaceChildren();
+  for (const c of report.claims) {
+    const row = document.createElement("div"); row.className = "claim";
+    const tag = document.createElement("span"); tag.className = "tag " + c.status; tag.textContent = c.status;
+    const txt = document.createElement("span"); txt.textContent = c.claim;
+    row.append(tag, txt); root.append(row);
+  }
+  $("verifyPanel").hidden = report.claims.length === 0;
+}
+
+function handle(name, data, state) {
+  switch (name) {
+    case "status": $("status").textContent = STAGES[data.stage] || ""; break;
+    case "token": state.live += data.text; $("answerPanel").hidden = false; $("answer").textContent = state.live; break;
+    case "answer":
+      renderAnswer(data.text); $("answerPanel").hidden = false;
+      if (data.invalid_citation_indices.length) banner("warn", "The model cited source numbers that do not exist (" + data.invalid_citation_indices.join(", ") + "); they were removed.");
+      break;
+    case "citations": renderSources(data.citations); break;
+    case "verification": renderClaims(data); break;
+    case "abstained":
+      $("answer").replaceChildren();
+      banner("warn", data.reason === "no_context"
+        ? "No relevant passages were found, so no answer was generated."
+        : "The retrieved passages do not contain the answer, so LEXIS declined to answer.");
+      break;
+    case "failed": banner("bad", "The request failed (" + data.error + "). Check the server log."); break;
+    case "completed": $("status").textContent = ""; break;
+  }
+}
+
+async function ask() {
+  const query = $("q").value.trim();
+  if (!query) return;
+  const ids = $("docs").value.split(",").map((s) => s.trim()).filter(Boolean);
+  try { sessionStorage.setItem("lexis_key", keyInput.value); } catch (_) {}
+  reset(); $("ask").disabled = true; $("status").textContent = "Starting…";
+  const state = { live: "" };
+  try {
+    const res = await fetch("/v2/query/fast", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-API-Key": keyInput.value },
+      body: JSON.stringify({ query, document_ids: ids.length ? ids : null }),
+    });
+    if (!res.ok) {
+      const msg = res.status === 401 ? "Invalid or missing API key."
+        : res.status === 429 ? "Rate limit reached; retry in " + (res.headers.get("Retry-After") || "a few") + "s."
+        : res.status === 503 ? "Server authentication is not configured."
+        : "Request rejected (" + res.status + ").";
+      banner("bad", msg); $("status").textContent = ""; return;
+    }
+    const reader = res.body.getReader(), dec = new TextDecoder(); let buf = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n\n")) >= 0) {
+        const block = buf.slice(0, i); buf = buf.slice(i + 2);
+        const ev = /^event: (.*)$/m.exec(block), dt = /^data: (.*)$/m.exec(block);
+        if (ev && dt) handle(ev[1], JSON.parse(dt[1]), state);
+      }
+    }
+  } catch (e) {
+    banner("bad", "Network error: " + e.message); $("status").textContent = "";
+  } finally { $("ask").disabled = false; }
+}
+
+$("ask").addEventListener("click", ask);
+$("q").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) ask(); });
+</script>
+</body>
+</html>

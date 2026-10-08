@@ -31,3 +31,12 @@ jobs:
 
       - name: Zero-hardcoding ratchet
         run: python -m lexis.quality.hardcode_lint
+
+  docker:
+    # Proves the serving image builds from a clean clone (nothing is pushed or run).
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t lexis-api .

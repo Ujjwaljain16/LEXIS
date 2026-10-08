@@ -5,12 +5,16 @@ ASGI entrypoint:  uvicorn lexis.serving.app:app --host 0.0.0.0 --port 8000
 override dependencies; `app` is the process-wide instance uvicorn imports.
 """
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 
 from lexis.serving.api import router
 
 logger = logging.getLogger(__name__)
+
+STATIC_DIR = Path(__file__).parent / "static"
 
 
 def create_app() -> FastAPI:
@@ -21,6 +25,11 @@ def create_app() -> FastAPI:
                     "source passages it cites; unsupported answers abstain.",
     )
     application.include_router(router)
+
+    @application.get("/", include_in_schema=False)
+    async def index():
+        return FileResponse(STATIC_DIR / "index.html")
+
     return application
 
 

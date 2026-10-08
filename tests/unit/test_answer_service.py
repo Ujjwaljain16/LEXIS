@@ -230,3 +230,11 @@ def test_http_rate_limit(http, monkeypatch):
     h = {"X-API-Key": "good"}
     assert client.post("/v2/query/fast", json={"query": "q"}, headers=h).status_code == 200
     assert client.post("/v2/query/fast", json={"query": "q"}, headers=h).status_code == 429
+
+
+def test_ui_is_served_and_never_renders_model_output_as_html(http):
+    client, _, _ = http
+    r = client.get("/")
+    assert r.status_code == 200 and "<title>LEXIS</title>" in r.text
+    # Model output and retrieved passages must only ever be inserted as text, never parsed as HTML.
+    assert "innerHTML" not in r.text and "insertAdjacentHTML" not in r.text and "document.write" not in r.text
