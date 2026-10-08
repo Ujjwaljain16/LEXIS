@@ -18,10 +18,11 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      # CPU-only torch first: sentence-transformers would otherwise resolve the default
-      # CUDA build (several GB) on a runner that has no GPU.
-      - name: Install CPU torch
-        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      # CPU-only torch AND torchvision first, from the same index: sentence-transformers would
+      # otherwise resolve the default CUDA build (several GB) on a runner with no GPU, and a PyPI
+      # torchvision paired with a CPU torch fails at `import transformers` (torchvision::nms).
+      - name: Install CPU torch + torchvision
+        run: pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
       - name: Install package
         run: pip install -e ".[dev]"
