@@ -106,6 +106,7 @@ async def run_cuad_benchmark(
     split_name: str = None,
     ingest_checkpoint: str = None,
     max_contracts: int = None,
+    contract_offset: int = 0,
 ):
     logger.info(f"Loading CUAD dataset from {cuad_path}")
     raw = CUADLoader().load(cuad_path)
@@ -114,7 +115,8 @@ async def run_cuad_benchmark(
         if not split_name:
             raise ValueError("--split-name is required when --split-manifest is given")
         manifest = json.loads(Path(split_manifest).read_text(encoding="utf-8"))
-        contracts = cap_split_contracts(contracts_for_split(raw, manifest, split_name), max_contracts, split_name)
+        contracts = cap_split_contracts(contracts_for_split(raw, manifest, split_name), max_contracts, split_name,
+                                    offset=contract_offset)
         logger.info(f"Selected {len(contracts)} contracts from split={split_name!r} of manifest {split_manifest!r}.")
     else:
         contracts = select_contracts(raw, num_contracts)
@@ -205,6 +207,8 @@ async def run_cuad_benchmark(
         "hype_enabled": settings.hype_enabled,
         "rerank_enabled": settings.rerank_enabled,
         "preamble_prior_chunks": settings.preamble_prior_chunks,
+        "preamble_prior_weight": settings.preamble_prior_weight,
+        "contract_offset": contract_offset,
         "qdrant_collection_primary": settings.qdrant_collection_primary,
         "bm25_index_dir": settings.bm25_index_dir,
         "split_manifest": split_manifest,
@@ -343,6 +347,11 @@ def main():
              "Refused for the test split, which must always be evaluated whole.",
     )
     arg_parser.add_argument(
+        "--contract-offset", type=int, default=0,
+        help="DEV split only, with --max-contracts: skip the first K contracts, so a fresh slice "
+             "(contracts K..K+N) can confirm a choice made on an earlier slice.",
+    )
+    arg_parser.add_argument(
         "--ingest-checkpoint", default=None,
         help="Path to a JSON file tracking which contracts have already been ingested; updated after "
              "each contract so a large ingest run can resume after a crash/disconnect instead of "
@@ -375,7 +384,7 @@ def main():
             args.cuad_path, args.num_contracts, args.max_questions, args.top_k, args.output, args.skip_ingest,
             diagnostics_output=args.diagnostics_output, skip_diagnostics=args.skip_diagnostics,
             protocol=args.protocol, split_manifest=args.split_manifest, split_name=args.split_name,
-            ingest_checkpoint=args.ingest_checkpoint, max_contracts=args.max_contracts,
+            ingest_checkpoint=args.ingest_checkpoint, max_contracts=args.max_contracts, contract_offset=args.contract_offset,
         ))
     else:
         raise ValueError(f"Unknown benchmark: {args.benchmark}")

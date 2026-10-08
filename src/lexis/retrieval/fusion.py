@@ -1,8 +1,9 @@
-from typing import List, Dict
+from typing import Dict, List, Optional, Sequence
 from collections import defaultdict
 from lexis.retrieval.interfaces import Candidate
 
-def apply_rrf(candidate_lists: List[List[Candidate]], k: int = 60) -> List[Candidate]:
+def apply_rrf(candidate_lists: List[List[Candidate]], k: int = 60,
+              weights: Optional[Sequence[float]] = None) -> List[Candidate]:
     """
     Applies Reciprocal Rank Fusion (RRF) across multiple candidate lists.
     RRF score = sum(1 / (k + rank_in_path)) for each path where candidate appears.
@@ -10,7 +11,12 @@ def apply_rrf(candidate_lists: List[List[Candidate]], k: int = 60) -> List[Candi
     Args:
         candidate_lists: A list where each element is a list of Candidates from a specific retrieval path.
         k: The RRF constant (default 60 is standard in IR literature).
+        weights: optional per-list multiplier on that list's contribution (default: all 1.0, which is
+            plain RRF and bit-identical to the unweighted behaviour). Used to make a prior list
+            (e.g. the document-preamble prior) a tie-breaker rather than an equal voter.
     """
+    if weights is not None and len(weights) != len(candidate_lists):
+        raise ValueError(f"weights has {len(weights)} entries for {len(candidate_lists)} candidate lists")
     rrf_scores: Dict[str, float] = defaultdict(float)
     candidate_map: Dict[str, Candidate] = {}
     
@@ -18,7 +24,7 @@ def apply_rrf(candidate_lists: List[List[Candidate]], k: int = 60) -> List[Candi
     for path_idx, candidates in enumerate(candidate_lists):
         for rank, candidate in enumerate(candidates):
             # Rank is 0-indexed, standard RRF uses 1-indexed rank
-            rrf_score = 1.0 / (k + (rank + 1))
+            rrf_score = (1.0 if weights is None else weights[path_idx]) / (k + (rank + 1))
             rrf_scores[candidate.chunk_id] += rrf_score
             
             if candidate.chunk_id not in candidate_map:

@@ -123,3 +123,41 @@ def test_fusion_cannot_corrupt_the_cache(monkeypatch):
     run(eng)
     cached = eng._preamble_index._cache["d1"][0]
     assert cached.source_path == "path_preamble"   # not "path_preamble,path_b_global"
+
+
+def test_prior_weight_stops_an_unsupported_opening_chunk_from_displacing_real_hits(monkeypatch):
+    """The failure R7 showed on clause questions: an opening chunk NO retrieval path ranked still lands
+    at the top at equal weight (1/62, the same as a rank-1 single-path hit) and pushes the correct clause
+    down. At a small weight it stays below every real hit."""
+    monkeypatch.setattr(settings, "preamble_prior_chunks", 1)
+    dense = [("d1", "d1-late", 7), ("d1", "d1-second", 1), ("d1", "d1-sub", 101)]   # opening chunk absent
+    monkeypatch.setattr(settings, "preamble_prior_weight", 1.0)
+    full = [c["id"] for c in run(engine_with(dense)).final_chunks]
+    monkeypatch.setattr(settings, "preamble_prior_weight", 0.1)
+    weak = [c["id"] for c in run(engine_with(dense)).final_chunks]
+    assert full.index("d1-first") < full.index("d1-second")      # intrudes above the dense #2 hit
+    assert weak[-1] == "d1-first" and weak[:3] == ["d1-late", "d1-second", "d1-sub"]
+
+
+def test_a_weak_prior_still_lifts_an_opening_chunk_that_has_retrieval_support(monkeypatch):
+    monkeypatch.setattr(settings, "preamble_prior_chunks", 1)
+    dense = [("d1", "d1-late", 7), ("d1", "d1-second", 1), ("d1", "d1-sub", 101), ("d1", "d1-first", 0)]
+    monkeypatch.setattr(settings, "preamble_prior_weight", 0.5)
+    ids = [c["id"] for c in run(engine_with(dense)).final_chunks]
+    assert ids.index("d1-first") < 3          # was dense rank 4 (index 3)
+
+
+def test_weight_one_is_bit_identical_to_unweighted_fusion():
+    from lexis.retrieval.fusion import apply_rrf
+    from lexis.retrieval.interfaces import Candidate
+    mk = lambda ids, src: [Candidate(chunk_id=i, score=0.0, source_path=src) for i in ids]
+    lists = [mk(["a", "b", "c"], "x"), mk(["c", "a"], "y")]
+    plain = apply_rrf([[c.model_copy() for c in l] for l in lists], k=61)
+    weighted = apply_rrf([[c.model_copy() for c in l] for l in lists], k=61, weights=[1.0, 1.0])
+    assert [(c.chunk_id, c.score) for c in plain] == [(c.chunk_id, c.score) for c in weighted]
+
+
+def test_weights_length_mismatch_is_an_error():
+    from lexis.retrieval.fusion import apply_rrf
+    with pytest.raises(ValueError, match="weights"):
+        apply_rrf([[], []], k=61, weights=[1.0])

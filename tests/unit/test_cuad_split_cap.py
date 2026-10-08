@@ -36,3 +36,22 @@ def test_test_split_can_never_be_capped():
 def test_non_positive_cap_rejected(bad):
     with pytest.raises(ValueError, match="positive"):
         cap_split_contracts(CONTRACTS, bad, "dev")
+
+
+def test_offset_selects_a_disjoint_slice_in_split_order():
+    contracts = [{"title": f"c{i}"} for i in range(10)]
+    first = cap_split_contracts(contracts, 4, "dev", offset=0)
+    second = cap_split_contracts(contracts, 4, "dev", offset=4)
+    assert [c["title"] for c in first] == ["c0", "c1", "c2", "c3"]
+    assert [c["title"] for c in second] == ["c4", "c5", "c6", "c7"]
+    assert cap_split_contracts(contracts, 4, "dev", offset=8) == contracts[8:10]   # runs off the end safely
+
+
+def test_offset_rules():
+    contracts = [{"title": f"c{i}"} for i in range(5)]
+    with pytest.raises(ValueError, match="requires --max-contracts"):
+        cap_split_contracts(contracts, None, "dev", offset=2)
+    with pytest.raises(ValueError, match="non-negative"):
+        cap_split_contracts(contracts, 2, "dev", offset=-1)
+    with pytest.raises(ValueError, match="dev split"):
+        cap_split_contracts(contracts, 2, "test", offset=1)

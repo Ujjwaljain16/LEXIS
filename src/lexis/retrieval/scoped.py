@@ -83,8 +83,8 @@ async def retrieve_scoped(engine: RetrievalEngine, query: str, doc_ids: Sequence
             engine._preamble_index = index
         preamble = await index.for_scope(scope, settings.preamble_prior_chunks)
 
-    lists = [lst for lst in (dense, bm25, hype, preamble) if lst]
-    fused = apply_rrf(lists, k=settings.rrf_k)
+    weighted = [(lst, w) for lst, w in ((dense, 1.0), (bm25, 1.0), (hype, 1.0), (preamble, settings.preamble_prior_weight)) if lst]
+    fused = apply_rrf([lst for lst, _ in weighted], k=settings.rrf_k, weights=[w for _, w in weighted])
 
     # R4: same top-rerank_top_k-then-append-the-rest policy as
     # RetrievalEngine._maybe_rerank -- duplicated rather than called (getattr, not a hard

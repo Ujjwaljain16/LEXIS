@@ -91,14 +91,19 @@ def contracts_for_split(raw: Mapping[str, Any], manifest: Mapping[str, Any], spl
 
 
 def cap_split_contracts(contracts: List[Dict[str, Any]], max_contracts: Optional[int],
-                        split_name: str) -> List[Dict[str, Any]]:
-    """First `max_contracts` contracts of a split, in the split's own deterministic order.
+                        split_name: str, offset: int = 0) -> List[Dict[str, Any]]:
+    """`max_contracts` contracts of a split starting at `offset`, in the split's own deterministic order.
 
     Exists so a dev-set ablation can be large enough to resolve a small effect (50 questions give a
     +/-0.11 MRR interval, far too wide to separate a +0.05 gain from noise) without ingesting the
-    whole 346-contract dev split. Refused for the held-out test split: that must always be
-    evaluated whole, or "frozen test baseline" stops meaning one specific, comparable set of cases."""
+    whole 346-contract dev split, and so a choice made on one slice can be confirmed on a disjoint
+    one (offset). Refused for the held-out test split: that must always be evaluated whole, or
+    "frozen test baseline" stops meaning one specific, comparable set of cases."""
+    if offset < 0:
+        raise ValueError("--contract-offset must be non-negative")
     if max_contracts is None:
+        if offset:
+            raise ValueError("--contract-offset requires --max-contracts")
         return contracts
     if split_name != "dev":
         raise ValueError(
@@ -107,4 +112,4 @@ def cap_split_contracts(contracts: List[Dict[str, Any]], max_contracts: Optional
         )
     if max_contracts <= 0:
         raise ValueError("--max-contracts must be positive")
-    return contracts[:max_contracts]
+    return contracts[offset:offset + max_contracts]

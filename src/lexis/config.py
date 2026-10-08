@@ -83,6 +83,10 @@ class Settings(BaseSettings):
     # ablation flag: the number of opening chunks per document added as an extra RRF list.
     preamble_prior_chunks: int = 0
     preamble_scroll_batch: int = 256
+    # Weight of the preamble list in RRF relative to the dense/BM25 lists (1.0 = equal vote). Below 1.0 it
+    # acts as a tie-breaker so it lifts opening chunks that already have some retrieval support without
+    # pushing irrelevant opening chunks above correct clause hits.
+    preamble_prior_weight: float = 1.0
 
     # NLI/faithfulness checking (plan section 5, "Real NLI"). 0.5 ("more likely entailed than
     # not") is a deliberately conservative starting point, not a measured value -- the plan
