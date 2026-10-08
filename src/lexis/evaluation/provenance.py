@@ -15,7 +15,11 @@ from importlib import metadata
 from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping, Optional
 
-_SECRET_KEY_RE = re.compile(r"(api[_-]?key|secret|token|password|passwd|credential|private[_-]?key)", re.I)
+# "token" must match as a whole key segment (token, access_token, accessToken), never as a substring of
+# plural config like chunk_target_tokens / max_tokens: over-redacting those made two runs with different
+# chunk sizes hash identically.
+_SECRET_KEY_RE = re.compile(
+    r"(api[_-]?key|secret|password|passwd|credential|private[_-]?key|(?:^|[_\-.])token(?:$|[_\-.])|[a-z]token$)", re.I)
 _CRED_URL_RE = re.compile(r"(?P<scheme>[A-Za-z][A-Za-z0-9+.-]*://)[^/@\s:]+:[^/@\s]+@")
 REDACTED = "***REDACTED***"
 

@@ -114,3 +114,31 @@ def test_resolve_layers_experiment_file_between_pack_and_cli(tmp_path):
 
 def test_resolved_config_is_json_serializable():
     json.dumps(resolve_experiment(CONFIG, "uk_eu_statutes"))
+
+
+def test_a_new_jurisdiction_is_added_by_data_alone(tmp_path):
+    """The plan's abstraction claim, executed: a fourth pack (Singapore) is created purely as a YAML
+    file -- no Python in src/ or tests/ knows it exists -- then discovered, validated against the
+    model registry, and used to extract its own citation format."""
+    import yaml
+
+    template = yaml.safe_load((CONFIG / "packs" / "uk_eu_statutes.yaml").read_text(encoding="utf-8"))
+    template.update(
+        name="singapore_cases",
+        description="Singapore court judgments (neutral citations).",
+        citation_grammars=[{
+            "name": "sg_neutral", "pattern": r"\[\d{4}\]\s+SG(?:CA|HC|DC)\s+\d{1,3}",
+            "examples": ["[2019] SGCA 12", "[2021] SGHC 7"], "non_examples": ["2019 SGCA 12"],
+            "description": "Singapore neutral citation.",
+        }],
+        compliance=[{"source": "Singapore Law Watch", "requirement": "Check terms before bulk use.",
+                     "blocks_redistribution": False, "blocks_commercial_use": False}],
+        eval_datasets=["sg_gold"],
+    )
+    (tmp_path / "singapore_cases.yaml").write_text(yaml.safe_dump(template), encoding="utf-8")
+
+    packs = discover_packs(tmp_path)
+    assert set(packs) == {"singapore_cases"}
+    validate_against_registry(packs["singapore_cases"], REGISTRY, commercial=False)
+    found = extract_citations("See Re X [2019] SGCA 12 and [2021] SGHC 7; not 2019 SGCA 12.", packs["singapore_cases"])
+    assert [m.text for m in found] == ["[2019] SGCA 12", "[2021] SGHC 7"]

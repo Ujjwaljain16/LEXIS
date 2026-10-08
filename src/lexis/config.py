@@ -103,6 +103,12 @@ class Settings(BaseSettings):
     rate_limit_fast_per_window: int = 30
     rate_limit_deep_per_window: int = 5
 
+    # Frozen-artifact verification tolerances (evaluation/verify_frozen.py). Means are exact sums, so the
+    # tolerance is float noise; CI bounds come from a seeded bootstrap whose RNG stream can differ across
+    # numpy major versions.
+    verify_mean_tolerance: float = 1e-9
+    verify_ci_tolerance: float = 5e-4
+
     # Chunking
     semantic_chunking_threshold: float = 0.4
     chunk_target_tokens: int = 500
