@@ -4,6 +4,8 @@ from typing import Optional
 from pydantic import BaseModel
 import asyncpg
 
+from lexis.config import settings
+
 logger = logging.getLogger(__name__)
 
 class BoundingBox(BaseModel):
@@ -31,7 +33,9 @@ class DocumentMetadata(BaseModel):
 
 class PostgresClient:
     def __init__(self, dsn: str = None):
-        self.dsn = dsn or os.getenv("POSTGRES_URL", "postgresql://postgres:postgres@localhost:5432/postgres")
+        # Precedence: explicit arg > real process env var (deployment-style
+        # config) > .env-file-backed settings (local dev-style config).
+        self.dsn = dsn or os.getenv("POSTGRES_URL") or settings.postgres_url
         self.pool = None
 
     async def connect(self):
@@ -101,7 +105,7 @@ class PostgresClient:
         try:
             await self.connect()
             async with self.pool.acquire() as conn:
-                row = await conn.fetchrow("SELECT * FROM citation_references WHERE pqac_id = ", pqac_id)
+                row = await conn.fetchrow("SELECT * FROM citation_references WHERE pqac_id = $1", pqac_id)
                 if row:
                     return CitationReference(
                         pqac_id=row['pqac_id'],

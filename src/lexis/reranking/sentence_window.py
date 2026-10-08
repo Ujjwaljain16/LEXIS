@@ -1,4 +1,4 @@
-from typing import List, Callable, Awaitable
+from typing import List, Callable, Awaitable, Optional
 from lexis.retrieval.interfaces import Query, Candidate
 from lexis.reranking.interfaces import Reranker
 import logging
@@ -7,14 +7,18 @@ logger = logging.getLogger(__name__)
 
 class SentenceWindowExpansion(Reranker):
     """
-    Expands high-scoring candidates with their adjacent chunks (e.g., chunk_idx-1, chunk_idx+1)
-    to provide the LLM with surrounding context. 
+    Expands high-scoring candidates with their adjacent chunks (by document-relative
+    position, not any assumed document structure) to provide the LLM with surrounding
+    context.
     Crucially, this is applied AFTER the CrossEncoder to minimize token processing costs.
     """
-    def __init__(self, fetch_chunk_fn: Callable[[str], Awaitable[Candidate]], window_size: int = 1):
+    def __init__(self, fetch_chunk_fn: Callable[[str, int], Awaitable[Optional[Candidate]]], window_size: int = 1):
         """
         Args:
-            fetch_chunk_fn: An async callable that takes a chunk_id and returns the Candidate.
+            fetch_chunk_fn: An async callable that takes (doc_id, chunk_index) and returns
+                the Candidate at that position, or None if it doesn't exist. Chunk ids are
+                content-derived hashes (see Chunk.create) and cannot be constructed from
+                doc_id/index alone, so lookup must happen by position, not by a guessed id.
             window_size: Number of adjacent chunks to fetch on each side.
         """
         self.fetch_chunk_fn = fetch_chunk_fn
@@ -23,47 +27,51 @@ class SentenceWindowExpansion(Reranker):
     async def transform(self, query: Query, candidates: List[Candidate]) -> List[Candidate]:
         expanded_candidates = []
         seen_ids = set()
-        
+
         for candidate in candidates:
             if candidate.chunk_id in seen_ids:
                 continue
-                
-            # Attempt to parse chunk sequence index if it follows a pattern like doc_123_chunk_5
-            # For this MVP, we assume metadata contains 'doc_id' and 'chunk_index'
+            seen_ids.add(candidate.chunk_id)
+
+            # chunk_index is the chunk's position within its document's chunk sequence
+            # (see Chunk.split_idx), populated by the ingestion pipeline. It carries no
+            # assumption about document type or internal structure.
             doc_id = candidate.metadata.get("doc_id")
             chunk_index = candidate.metadata.get("chunk_index")
-            
+
             if doc_id is None or chunk_index is None:
-                if candidate.chunk_id not in seen_ids:
-                    expanded_candidates.append(candidate)
-                    seen_ids.add(candidate.chunk_id)
+                expanded_candidates.append(candidate)
                 continue
-                
-            # Fetch surrounding chunks
-            context_chunks = []
+
+            chunk_index = int(chunk_index)
+
+            # Fetch surrounding chunks by (doc_id, chunk_index); start with the anchor itself.
+            context_chunks = [candidate]
             for offset in range(-self.window_size, self.window_size + 1):
-                target_idx = int(chunk_index) + offset
+                if offset == 0:
+                    continue
+                target_idx = chunk_index + offset
                 if target_idx < 0:
                     continue
-                    
-                target_chunk_id = f"{doc_id}_chunk_{target_idx}"
-                if target_chunk_id not in seen_ids:
-                    try:
-                        adj_chunk = await self.fetch_chunk_fn(target_chunk_id)
-                        if adj_chunk:
-                            context_chunks.append(adj_chunk)
-                            seen_ids.add(target_chunk_id)
-                    except Exception as e:
-                        logger.warning(f"Failed to fetch adjacent chunk {target_chunk_id}: {e}")
-            
+
+                try:
+                    adj_chunk = await self.fetch_chunk_fn(doc_id, target_idx)
+                except Exception as e:
+                    logger.warning(f"Failed to fetch adjacent chunk for doc_id={doc_id} chunk_index={target_idx}: {e}")
+                    continue
+
+                if adj_chunk and adj_chunk.chunk_id not in seen_ids:
+                    context_chunks.append(adj_chunk)
+                    seen_ids.add(adj_chunk.chunk_id)
+
             # Combine the content logically or just append the adjacent chunks as new candidates.
             # Usually, window expansion merges them into the original candidate to keep it a single continuous text block.
             # We'll merge them for efficiency:
-            if context_chunks:
+            if len(context_chunks) > 1:
                 # Sort by original chunk index to maintain reading order
                 context_chunks.sort(key=lambda c: int(c.metadata.get("chunk_index", 0)))
                 merged_content = "\n\n".join([c.content for c in context_chunks])
-                
+
                 expanded_candidate = Candidate(
                     chunk_id=candidate.chunk_id, # keep original anchor ID
                     score=candidate.score,
@@ -74,5 +82,5 @@ class SentenceWindowExpansion(Reranker):
                 expanded_candidates.append(expanded_candidate)
             else:
                 expanded_candidates.append(candidate)
-                
+
         return expanded_candidates

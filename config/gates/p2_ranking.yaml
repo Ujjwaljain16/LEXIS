@@ -1,0 +1,18 @@
+# P2: ranking and context (rerank, routing, sentence-window).
+phase: p2_ranking
+description: Ranking quality improves without losing recall, at a measured latency.
+split: test
+status: provisional
+criteria:
+  - id: ndcg10_gain
+    metric: ndcg@10
+    type: relative_gain
+  - id: recall30_no_regression
+    metric: recall@30
+    type: no_regression
+    tolerance: 0.01
+  - id: fast_path_p95_ms
+    metric: fast_path_latency_p95_ms
+    type: absolute_max
+    use: hi
+    threshold: 6000

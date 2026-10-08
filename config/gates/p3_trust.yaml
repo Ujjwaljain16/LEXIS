@@ -1,0 +1,31 @@
+# P3: generation trust (real NLI, citation support, abstention, deep mode).
+phase: p3_trust
+description: Claim-level faithfulness and citation support, measured against human-labelled calibration.
+split: test
+status: provisional
+criteria:
+  - id: faithfulness_floor
+    metric: faithfulness
+    type: absolute_min
+    use: lo
+    threshold: 0.85
+  - id: citation_support_precision_floor
+    metric: citation_support_precision
+    type: absolute_min
+    use: lo
+    threshold: 0.90
+    description: The cited chunk actually supports the claim (not merely that the key exists).
+  - id: abstention_accuracy_floor
+    metric: abstention_accuracy
+    type: absolute_min
+    use: lo
+    threshold: 0.80
+  - id: hallucination_rate_ceiling
+    metric: hallucination_rate
+    type: absolute_max
+    use: hi
+    threshold: 0.17
+    description: CI upper bound below the 17% best commercial-tool rate reported by the Stanford RegLab study.
+  - id: deep_vs_fast_faithfulness
+    metric: faithfulness_deep_vs_fast
+    type: relative_gain

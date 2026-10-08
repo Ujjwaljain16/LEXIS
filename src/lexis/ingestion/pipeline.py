@@ -12,14 +12,16 @@ import hashlib
 from typing import List
 from qdrant_client.http import models
 
+from lexis.config import settings
 from lexis.indexing.schema import Chunk, ChunkMetadata
 from lexis.ingestion.parser import LexisParser
 from lexis.ingestion.embedder import BGEM3Embedder
 from lexis.ingestion.chunker import SemanticChunker
 from lexis.ingestion.feature_extractor import FeatureExtractor
-from lexis.ingestion.raptor import LexisRaptor
+from lexis.ingestion.hype_generator import HyPEGenerator
+from lexis.indexing.raptor import LexisRaptor
 from lexis.indexing.qdrant_client import LexisQdrantClient
-from lexis.indexing.es_client import LexisElasticsearchClient
+from lexis.indexing.bm25_index import LexisBM25Index
 from lexis.indexing.pg_client import PostgresClient, CitationReference, BoundingBox
 
 from lexis.ingestion.interfaces import BaseParser, BaseChunker, BaseEmbedder
@@ -30,76 +32,95 @@ class IngestionPipeline:
         self.embedder = embedder if embedder is not None else BGEM3Embedder()
         self.chunker = chunker if chunker is not None else SemanticChunker(embedder=self.embedder)
         self.feature_extractor = FeatureExtractor()
+        self.hype_generator = HyPEGenerator()
         self.raptor = LexisRaptor(embedder=self.embedder)
-        
+
         self.qdrant = LexisQdrantClient()
-        self.es = LexisElasticsearchClient()
+        self.bm25 = LexisBM25Index(index_dir=settings.bm25_index_dir)
         self.pg = PostgresClient()
 
     def _deterministic_uuid(self, string_id: str) -> str:
         """Qdrant requires pure UUIDs. We map our pqac- prefixed IDs to pure UUIDs."""
         return str(uuid.uuid5(uuid.NAMESPACE_DNS, string_id))
 
+    async def _build_hype_points(self, chunks: List[Chunk]) -> List[models.PointStruct]:
+        """One HyPEGenerator call per chunk, concurrency-bounded (see
+        settings.hype_max_concurrent_requests -- a live run against Gemini's free tier
+        confirmed firing every chunk's call at once, unbounded, blows through the
+        20 req/min quota almost immediately and fails most of them with RateLimitError),
+        then one batched embed_batch call over every generated question across all chunks
+        (not per-chunk) -- matches how the primary/BM25 paths above already batch embeddings.
+
+        Each point's payload denormalizes the chunk's real content (not just chunk_id)
+        so retrieval/hybrid_retriever.py's HyPE path can build a Candidate directly from
+        the hit, exactly like path_b_global/path_d_bm25 do -- no second lookup at query
+        time, and no risk of apply_rrf ever surfacing an empty/wrong "content" for a
+        chunk that RRF fusion first sees via this path (see fusion.py: the first
+        candidate seen for a chunk_id wins its content/metadata).
+        """
+        semaphore = asyncio.Semaphore(settings.hype_max_concurrent_requests)
+
+        async def bounded_generate(chunk: Chunk) -> List[str]:
+            async with semaphore:
+                return await self.hype_generator.generate_questions(chunk.raw_content)
+
+        per_chunk_questions = await asyncio.gather(*(bounded_generate(c) for c in chunks))
+
+        texts, owners = [], []
+        for c, questions in zip(chunks, per_chunk_questions):
+            for q in questions:
+                if q and q.strip():
+                    texts.append(q)
+                    owners.append((c, q))
+        if not texts:
+            return []
+
+        embeddings = self.embedder.embed_batch(texts)
+        points = []
+        for (c, q), emb in zip(owners, embeddings):
+            point_id = self._deterministic_uuid(f"{c.chunk_id}|hype|{q}")
+            points.append(models.PointStruct(
+                id=point_id,
+                vector=emb.tolist(),
+                payload={
+                    "chunk_id": c.chunk_id,
+                    "doc_id": c.doc_id,
+                    "content": c.raw_content,
+                    "question": q,
+                    "doc_type": c.metadata.document_type,
+                    "chunk_index": c.split_idx,
+                }
+            ))
+        return points
+
     async def ingest_document(self, file_path: str, doc_id: str, progress_callback=None):
         """
-        End-to-End ingestion of a single document.
+        End-to-End ingestion of a single document for Foundation Phase.
         """
         if progress_callback:
             await progress_callback("PARSING")
-        print(f"[{doc_id}] Parsing PDF...")
-        elements = self.parser.parse(file_path)
+        print(f"[{doc_id}] Parsing Document...")
+        elements = self.parser.parse(file_path, doc_id)
         
         if progress_callback:
             await progress_callback("CHUNKING")
         print(f"[{doc_id}] Semantic Chunking...")
-        raw_chunks = self.chunker.chunk(elements)
-        
-        chunks: List[Chunk] = []
-        for idx, rc in enumerate(raw_chunks):
-            metadata = ChunkMetadata(
-                source_file=file_path,
-                page_num=rc["page_num"],
-                bounding_box=rc["bounding_box"]
-            )
-            chunks.append(Chunk.create(
-                doc_id=doc_id,
-                split_idx=idx,
-                raw_content=rc["text"],
-                metadata=metadata
-            ))
-
-        if progress_callback:
-            await progress_callback("FEATURE_EXTRACTION")
-
-        print(f"[{doc_id}] Extracting Features (Propositions & HyPE) concurrently...")
-        batch_size = 10
-        all_features = []
-        for i in range(0, len(chunks), batch_size):
-            batch = chunks[i:i+batch_size]
-            tasks = [self.feature_extractor.extract_features(c) for c in batch]
-            results = await asyncio.gather(*tasks)
-            all_features.extend(results)
-
-        print(f"[{doc_id}] Building RAPTOR Tree...")
-        raptor_summaries = await self.raptor.build_tree(chunks)
+        chunks: List[Chunk] = self.chunker.chunk(elements)
 
         if progress_callback:
             await progress_callback("INDEXING")
         print(f"[{doc_id}] Upserting to Databases...")
-        await self._upsert_to_databases(chunks, all_features, raptor_summaries)
+        await self._upsert_to_databases(chunks)
         
         if progress_callback:
             await progress_callback("COMPLETED")
         print(f"[{doc_id}] Ingestion Complete.")
 
-    async def _upsert_to_databases(self, chunks: List[Chunk], features: List[dict], raptor_summaries: List[dict]):
+    async def _upsert_to_databases(self, chunks: List[Chunk]):
         primary_points = []
-        hype_points = []
-        prop_points = []
-        cluster_points = []
         
         # 1. Primary Chunks
-        texts = [c.raw_content for c in chunks]
+        texts = [c.content for c in chunks] # embed the CCH prepended content
         if not texts:
             return
             
@@ -108,55 +129,52 @@ class IngestionPipeline:
             primary_points.append(models.PointStruct(
                 id=self._deterministic_uuid(c.chunk_id),
                 vector=emb.tolist(),
-                payload={"chunk_id": c.chunk_id, "doc_id": c.doc_id, "text": c.raw_content, "page_num": c.metadata.page_num}
+                payload={
+                    "chunk_id": c.chunk_id,
+                    "doc_id": c.doc_id,
+                    "content": c.raw_content,
+                    "page_num": c.metadata.page_num,
+                    "doc_type": c.metadata.document_type,
+                    "chunk_index": c.split_idx
+                }
             ))
-            
-        # 2. HyPE and Propositions
-        for chunk, feat in zip(chunks, features):
-            questions = feat["hype"].hypothesis_questions
-            if questions:
-                q_text = " ".join(questions)
-                q_emb = self.embedder.embed_text(q_text)
-                hype_points.append(models.PointStruct(
-                    id=self._deterministic_uuid(chunk.chunk_id + "_hype"),
-                    vector=q_emb.tolist(),
-                    payload={"chunk_id": chunk.chunk_id, "doc_id": chunk.doc_id, "questions": questions}
-                ))
-            
-            for prop in feat["propositions"]:
-                prop_str = f"{prop.subject} {prop.predicate} {prop.object}"
-                p_emb = self.embedder.embed_text(prop_str)
-                
-                # Generate deterministic prop_id if not present
-                prop_id_str = prop.prop_id if prop.prop_id else f"{chunk.chunk_id}_{prop_str}"
-                
-                prop_points.append(models.PointStruct(
-                    id=self._deterministic_uuid(prop_id_str),
-                    vector=p_emb.tolist(),
-                    payload={"chunk_id": chunk.chunk_id, "doc_id": chunk.doc_id, "proposition": prop_str}
-                ))
-
-        # 3. RAPTOR
-        if raptor_summaries:
-            summary_texts = [s["chunk"].raw_content for s in raptor_summaries]
-            sum_embs = self.embedder.embed_batch(summary_texts)
-            for s, emb in zip(raptor_summaries, sum_embs):
-                cluster_points.append(models.PointStruct(
-                    id=self._deterministic_uuid(s["chunk"].chunk_id),
-                    vector=emb.tolist(),
-                    payload={"chunk_id": s["chunk"].chunk_id, "doc_id": s["chunk"].doc_id, "level": s["level"]}
-                ))
 
         # Upsert Qdrant
-        if primary_points: await self.qdrant.upsert_chunks("primary_v2", primary_points)
-        if hype_points: await self.qdrant.upsert_chunks("hype_v2", hype_points)
-        if prop_points: await self.qdrant.upsert_chunks("propositions_v2", prop_points)
-        if cluster_points: await self.qdrant.upsert_chunks("clusters_v2", cluster_points)
-        
-        # Upsert ES
+        if primary_points:
+            await self.qdrant.upsert_chunks(settings.qdrant_collection_primary, primary_points)
+
+        # R2: HyPE question index (off by default -- settings.hype_enabled). Generates N
+        # hypothetical questions per chunk (index-time LLM cost only, never at query time) and
+        # embeds them into a separate collection so a short query can match a semantically close
+        # hypothetical question instead of the (usually much longer, differently-phrased) chunk
+        # text itself -- see LEXIS_FINAL_PLAN.md section 4, R2.
+        if settings.hype_enabled and chunks:
+            hype_points = await self._build_hype_points(chunks)
+            if hype_points:
+                await self.qdrant.upsert_chunks(settings.qdrant_collection_hype, hype_points)
+
+        # Upsert BM25 (ADR-003: local bm25s index, replaces Elasticsearch).
+        # index_text carries the CCH-prefixed text (doc title/type/section), matching what the
+        # dense path already embeds above -- previously BM25 tokenized raw_content only, so
+        # keyword search never benefited from that context. "content" stays raw_content, since
+        # LexisBM25Index returns the corpus dict verbatim as each hit's payload and path_d_bm25.py
+        # reads payload["content"] as the candidate's actual text -- indexing the CCH-prefixed
+        # text under "content" would leak "Document: ...\nType: ...\nSection: ...\n\n" into every
+        # BM25 candidate's content shown to the LLM/citations.
         if chunks:
-            es_docs = [{"chunk_id": c.chunk_id, "doc_id": c.doc_id, "content": c.raw_content} for c in chunks]
-            await self.es.index_documents(es_docs)
+            bm25_docs = [
+                {
+                    "chunk_id": c.chunk_id,
+                    "doc_id": c.doc_id,
+                    "content": c.raw_content,
+                    "index_text": c.content,
+                    "doc_type": c.metadata.document_type,
+                    "source_file": c.metadata.source_file,
+                    "chunk_index": c.split_idx,
+                }
+                for c in chunks
+            ]
+            self.bm25.add_documents(bm25_docs)
             
         # Upsert Postgres Citations
         await self.pg.initialize_schema()

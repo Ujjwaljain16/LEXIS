@@ -12,14 +12,13 @@ from pydantic import BaseModel, Field
 from lexis.evaluation.cost_ledger import ResearchBudget
 from litellm import acompletion
 
-from ..cache.base import CachedEvidence
-from ..cache.redis_cache import get_cache
+from lexis.serving.base import CachedEvidence
+from lexis.serving.cache import get_cache
+from lexis.generation.prompts import EVIDENCE_EXTRACTION_PROMPT
 
 logger = logging.getLogger(__name__)
 
 # --- Data Structures ---
-
-
 
 class ResearchNode(BaseModel):
     query: str
@@ -37,19 +36,6 @@ class ResearchSession(BaseModel):
     graph: ResearchGraph
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
-# --- Prompts ---
-
-EVIDENCE_EXTRACTION_PROMPT = """You are a legal research analyst.
-Extract exactly WHY this text answers the query. 
-If it does NOT answer the query, output exactly: "NO_EVIDENCE".
-
-Query: "{query}"
-
-Text: "{text}"
-
-Output your reasoning succinctly.
-"""
-
 # --- Core Logic ---
 
 def _hash_query(query: str) -> str:
@@ -61,8 +47,10 @@ async def _map_single_chunk(query: str, query_hash: str, chunk: Dict, model: str
     payload = chunk.get("payload", {})
     chunk_id = payload.get("chunk_id", "unknown")
     text = payload.get("content", "")
-    pqac_key = payload.get("pqac_key", "unknown")
-    
+    # The citation key IS the chunk id (see indexing/schema.py::Chunk.pqac_key);
+    # the Qdrant payload stores it as "chunk_id", never as a separate field.
+    pqac_key = payload.get("pqac_key") or chunk_id
+
     # 1. Cache Check
     cached = await cache.get(chunk_id, query_hash)
     if cached:

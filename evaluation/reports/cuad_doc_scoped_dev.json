@@ -1,0 +1,391 @@
+{
+  "generated_at": "2026-09-22T21:45:17.928590+00:00",
+  "benchmark": "cuad",
+  "cuad_source_path": "data/cuad_raw/CUAD_v1/CUAD_v1.json",
+  "protocol": "doc_scoped",
+  "run_config": {
+    "num_contracts": 10,
+    "max_questions": 50,
+    "top_k": 30,
+    "protocol": "doc_scoped",
+    "embedding_model": "BAAI/bge-m3",
+    "rrf_k": 61
+  },
+  "num_cases_scored": 50,
+  "num_cases_excluded_no_ground_truth": 0,
+  "num_cases_unmapped": 2,
+  "unmapped_cases": [
+    {
+      "case_id": "ACCELERATEDTECHNOLOGIESHOLDINGCORP_04_24_2003-EX-10.13-JOINT VENTURE AGREEMENT__Document Name",
+      "doc_id": "cuad-4403902dc755f990",
+      "contract_title": "ACCELERATEDTECHNOLOGIESHOLDINGCORP_04_24_2003-EX-10.13-JOINT VENTURE AGREEMENT",
+      "reason": "no_chunk_contained_any_answer_text",
+      "answer_texts": [
+        "JOINT VENTURE AGREEMENT"
+      ]
+    },
+    {
+      "case_id": "ACCELERATEDTECHNOLOGIESHOLDINGCORP_04_24_2003-EX-10.13-JOINT VENTURE AGREEMENT__Revenue/Profit Sharing",
+      "doc_id": "cuad-4403902dc755f990",
+      "contract_title": "ACCELERATEDTECHNOLOGIESHOLDINGCORP_04_24_2003-EX-10.13-JOINT VENTURE AGREEMENT",
+      "reason": "no_chunk_contained_any_answer_text",
+      "answer_texts": [
+        "Division of Income and Losses. All income and credits, and all losses and      deductions shall be owned and shared among the Joint Venturers as follows:\n\n     50% to Collectible Concepts Group, Inc.\n\n     50% to Pivotal Self Service Tech, Inc."
+      ]
+    }
+  ],
+  "mean_recall_at_k": 0.8813218390804597,
+  "mean_reciprocal_rank": 0.5523563218390806,
+  "per_case": [
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__Agreement Date",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.041666666666666664,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__Anti-Assignment",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.25,
+      "retrieved_count": 30,
+      "relevant_count": 2
+    },
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__Audit Rights",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.3333333333333333,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__Cap On Liability",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__Change Of Control",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__Document Name",
+      "recall_at_k": 0.0,
+      "reciprocal_rank": 0.0,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__Effective Date",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.05,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__Expiration Date",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__Governing Law",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__Joint Ip Ownership",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__License Grant",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.16666666666666666,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__Non-Compete",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.041666666666666664,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__Non-Transferable License",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.2,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__Notice Period To Terminate Renewal",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.5,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__Parties",
+      "recall_at_k": 0.5833333333333334,
+      "reciprocal_rank": 0.5,
+      "retrieved_count": 30,
+      "relevant_count": 24
+    },
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__Post-Termination Services",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__Renewal Term",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__Revenue/Profit Sharing",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.05,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "2ThemartComInc_19990826_10-12G_EX-10.10_6700288_EX-10.10_Co-Branding Agreement_ Agency Agreement__Uncapped Liability",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "ABILITYINC_06_15_2020-EX-4.25-SERVICES AGREEMENT__Agreement Date",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.08333333333333333,
+      "retrieved_count": 22,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "ABILITYINC_06_15_2020-EX-4.25-SERVICES AGREEMENT__Anti-Assignment",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.3333333333333333,
+      "retrieved_count": 22,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "ABILITYINC_06_15_2020-EX-4.25-SERVICES AGREEMENT__Document Name",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.3333333333333333,
+      "retrieved_count": 22,
+      "relevant_count": 2
+    },
+    {
+      "case_id": "ABILITYINC_06_15_2020-EX-4.25-SERVICES AGREEMENT__Effective Date",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.3333333333333333,
+      "retrieved_count": 22,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "ABILITYINC_06_15_2020-EX-4.25-SERVICES AGREEMENT__Expiration Date",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 22,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "ABILITYINC_06_15_2020-EX-4.25-SERVICES AGREEMENT__Governing Law",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 22,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "ABILITYINC_06_15_2020-EX-4.25-SERVICES AGREEMENT__Ip Ownership Assignment",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.5,
+      "retrieved_count": 22,
+      "relevant_count": 2
+    },
+    {
+      "case_id": "ABILITYINC_06_15_2020-EX-4.25-SERVICES AGREEMENT__Parties",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.3333333333333333,
+      "retrieved_count": 22,
+      "relevant_count": 2
+    },
+    {
+      "case_id": "ABILITYINC_06_15_2020-EX-4.25-SERVICES AGREEMENT__Termination For Convenience",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 22,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "ACCELERATEDTECHNOLOGIESHOLDINGCORP_04_24_2003-EX-10.13-JOINT VENTURE AGREEMENT__Anti-Assignment",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.5,
+      "retrieved_count": 24,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "ACCELERATEDTECHNOLOGIESHOLDINGCORP_04_24_2003-EX-10.13-JOINT VENTURE AGREEMENT__Audit Rights",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 24,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "ACCELERATEDTECHNOLOGIESHOLDINGCORP_04_24_2003-EX-10.13-JOINT VENTURE AGREEMENT__Effective Date",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 24,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "ACCELERATEDTECHNOLOGIESHOLDINGCORP_04_24_2003-EX-10.13-JOINT VENTURE AGREEMENT__Expiration Date",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.5,
+      "retrieved_count": 24,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "ACCELERATEDTECHNOLOGIESHOLDINGCORP_04_24_2003-EX-10.13-JOINT VENTURE AGREEMENT__Governing Law",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 24,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "ACCELERATEDTECHNOLOGIESHOLDINGCORP_04_24_2003-EX-10.13-JOINT VENTURE AGREEMENT__Parties",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.5,
+      "retrieved_count": 24,
+      "relevant_count": 6
+    },
+    {
+      "case_id": "ACCURAYINC_09_01_2010-EX-10.31-DISTRIBUTOR AGREEMENT__Agreement Date",
+      "recall_at_k": 0.5,
+      "reciprocal_rank": 0.034482758620689655,
+      "retrieved_count": 30,
+      "relevant_count": 2
+    },
+    {
+      "case_id": "ACCURAYINC_09_01_2010-EX-10.31-DISTRIBUTOR AGREEMENT__Anti-Assignment",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 30,
+      "relevant_count": 2
+    },
+    {
+      "case_id": "ACCURAYINC_09_01_2010-EX-10.31-DISTRIBUTOR AGREEMENT__Cap On Liability",
+      "recall_at_k": 0.5,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 30,
+      "relevant_count": 6
+    },
+    {
+      "case_id": "ACCURAYINC_09_01_2010-EX-10.31-DISTRIBUTOR AGREEMENT__Document Name",
+      "recall_at_k": 0.0,
+      "reciprocal_rank": 0.0,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "ACCURAYINC_09_01_2010-EX-10.31-DISTRIBUTOR AGREEMENT__Effective Date",
+      "recall_at_k": 0.0,
+      "reciprocal_rank": 0.0,
+      "retrieved_count": 30,
+      "relevant_count": 2
+    },
+    {
+      "case_id": "ACCURAYINC_09_01_2010-EX-10.31-DISTRIBUTOR AGREEMENT__Expiration Date",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.25,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "ACCURAYINC_09_01_2010-EX-10.31-DISTRIBUTOR AGREEMENT__Governing Law",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "ACCURAYINC_09_01_2010-EX-10.31-DISTRIBUTOR AGREEMENT__License Grant",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.5,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "ACCURAYINC_09_01_2010-EX-10.31-DISTRIBUTOR AGREEMENT__Non-Transferable License",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.5,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "ACCURAYINC_09_01_2010-EX-10.31-DISTRIBUTOR AGREEMENT__Parties",
+      "recall_at_k": 0.14942528735632185,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 30,
+      "relevant_count": 87
+    },
+    {
+      "case_id": "ACCURAYINC_09_01_2010-EX-10.31-DISTRIBUTOR AGREEMENT__Post-Termination Services",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.5,
+      "retrieved_count": 30,
+      "relevant_count": 3
+    },
+    {
+      "case_id": "ACCURAYINC_09_01_2010-EX-10.31-DISTRIBUTOR AGREEMENT__Uncapped Liability",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_count": 30,
+      "relevant_count": 2
+    },
+    {
+      "case_id": "ACCURAYINC_09_01_2010-EX-10.31-DISTRIBUTOR AGREEMENT__Warranty Duration",
+      "recall_at_k": 0.6666666666666666,
+      "reciprocal_rank": 0.2,
+      "retrieved_count": 30,
+      "relevant_count": 3
+    },
+    {
+      "case_id": "ADAMSGOLFINC_03_21_2005-EX-10.17-ENDORSEMENT AGREEMENT__Agreement Date",
+      "recall_at_k": 0.6666666666666666,
+      "reciprocal_rank": 0.5,
+      "retrieved_count": 30,
+      "relevant_count": 3
+    },
+    {
+      "case_id": "ADAMSGOLFINC_03_21_2005-EX-10.17-ENDORSEMENT AGREEMENT__Anti-Assignment",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.25,
+      "retrieved_count": 30,
+      "relevant_count": 1
+    },
+    {
+      "case_id": "ADAMSGOLFINC_03_21_2005-EX-10.17-ENDORSEMENT AGREEMENT__Competitive Restriction Exception",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 0.3333333333333333,
+      "retrieved_count": 30,
+      "relevant_count": 3
+    }
+  ]
+}

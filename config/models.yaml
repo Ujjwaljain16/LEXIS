@@ -1,0 +1,124 @@
+# Model registry (data, not code). Every model is referenced elsewhere by its key.
+#
+# license_verified: true  -> the licence was confirmed from a primary page during research.
+# license_verified: false -> licence recalled/assumed; MUST be checked before any commercial use
+#                            (a commercial profile refuses unverified models).
+# Hub identifiers below should be confirmed on first download.
+models:
+  bge-m3:
+    name: BAAI/bge-m3
+    kind: embedder
+    dim: 1024
+    max_length: 8192
+    license: MIT
+    license_verified: false
+    commercial_ok: true
+    hardware: gpu
+    languages: [multilingual]
+    notes: "Measured baseline embedder. MLEB NDCG@10 69.4 (rank 18/21) - strong multilingual, weaker on English legal."
+
+  qwen3-embedding-0.6b:
+    name: Qwen/Qwen3-Embedding-0.6B
+    kind: embedder
+    dim: 1024
+    max_length: 32768
+    license: Apache-2.0
+    license_verified: true
+    commercial_ok: true
+    hardware: gpu
+    query_prefix: "Instruct: Given a legal question, retrieve relevant passages that answer it\nQuery: "
+    languages: [multilingual]
+    notes: "MLEB NDCG@10 77.1 (best small open option)."
+
+  qwen3-embedding-4b:
+    name: Qwen/Qwen3-Embedding-4B
+    kind: embedder
+    dim: 2560
+    max_length: 32768
+    license: Apache-2.0
+    license_verified: true
+    commercial_ok: true
+    hardware: gpu
+    query_prefix: "Instruct: Given a legal question, retrieve relevant passages that answer it\nQuery: "
+    languages: [multilingual]
+    notes: "MLEB NDCG@10 82.0. Fits a T4 in fp16 (~8GB); index offline on Colab."
+
+  bge-reranker-v2-m3:
+    name: BAAI/bge-reranker-v2-m3
+    kind: reranker
+    max_length: 512
+    license: Apache-2.0
+    license_verified: true
+    commercial_ok: true
+    hardware: gpu
+    languages: [multilingual]
+    notes: "Must be ablated on our data; a general reranker hurt on LegalBench-RAG."
+
+  qwen3-reranker-0.6b:
+    name: Qwen/Qwen3-Reranker-0.6B
+    kind: reranker
+    max_length: 8192
+    license: Apache-2.0
+    license_verified: true
+    commercial_ok: true
+    hardware: gpu
+    languages: [multilingual]
+
+  jina-reranker-v3:
+    name: jinaai/jina-reranker-v3
+    kind: reranker
+    license: CC-BY-NC-4.0
+    license_verified: true
+    commercial_ok: false
+    hardware: gpu
+    languages: [multilingual]
+    notes: "Non-commercial: evaluation only."
+
+  nli-deberta-v3-base:
+    name: cross-encoder/nli-deberta-v3-base
+    kind: nli
+    max_length: 512
+    license: Apache-2.0
+    license_verified: false
+    commercial_ok: true
+    hardware: cpu
+    languages: [en]
+    params:
+      # Label order must be read from the model config at load time, never assumed.
+      label_order_from_config: true
+
+  minicheck-flan-t5-large:
+    name: lytang/MiniCheck-Flan-T5-Large
+    kind: nli
+    license: MIT
+    license_verified: false
+    commercial_ok: true
+    hardware: gpu
+    languages: [en]
+    notes: "General-domain balanced accuracy ~74.7% (LLM-AggreFact); legal accuracy unmeasured."
+
+  hhem-2.1-open:
+    name: vectara/hallucination_evaluation_model
+    kind: nli
+    license: Apache-2.0
+    license_verified: false
+    commercial_ok: true
+    hardware: cpu
+    languages: [en]
+    notes: "General-domain balanced accuracy ~73.2%; runs on CPU."
+
+  gemini-flash:
+    name: gemini/gemini-2.5-flash
+    kind: llm
+    license: Proprietary-API
+    license_verified: true
+    commercial_ok: true
+    hardware: api
+
+  gemini-pro:
+    name: gemini/gemini-2.5-pro
+    kind: llm
+    license: Proprietary-API
+    license_verified: true
+    commercial_ok: true
+    hardware: api

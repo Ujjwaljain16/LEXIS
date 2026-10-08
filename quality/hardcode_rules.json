@@ -1,0 +1,19 @@
+{
+  "_comment": "Rules for the zero-hardcoding lint (lexis.quality.hardcode_lint). This file is DATA: adding a pattern here requires no code change.",
+  "source_root": "src/lexis",
+  "exclude_paths": [
+    "config.py"
+  ],
+  "allowed_numbers": [0, 1, -1, 2, 0.0, 1.0, -1.0],
+  "string_patterns": {
+    "url_literal": "^[A-Za-z][A-Za-z0-9+.-]*://",
+    "model_identifier": "(?i)(bge-|bge_|gemini|gpt-|gpt4|llama|deberta|minilm|mpnet|qwen|claude|mistral|whisper|voyage)",
+    "hf_repo_id": "^[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$"
+  },
+  "numeric_contexts": [
+    "function_default",
+    "call_keyword",
+    "comparison",
+    "module_constant"
+  ]
+}

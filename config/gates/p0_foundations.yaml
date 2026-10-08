@@ -1,0 +1,14 @@
+# P0: the baseline must be measured on a set large enough for a usable confidence interval.
+# All thresholds are PROVISIONAL hypotheses (plan section 1): they are re-set from measured
+# data at the end of P0 and then the gate is switched to `frozen`.
+phase: p0_foundations
+description: Re-baseline on the frozen test split with a tight confidence interval.
+split: test
+status: provisional
+criteria:
+  - id: recall30_ci_width
+    metric: recall@30
+    type: absolute_max
+    use: width
+    threshold: 0.06
+    description: 95% CI on baseline Recall@30 must be no wider than this (needs a few hundred test questions).

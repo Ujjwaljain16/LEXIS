@@ -1,0 +1,223 @@
+import asyncio
+import logging
+from dataclasses import dataclass, field
+from typing import List, Dict, Any, Optional
+
+from lexis.config import settings
+from lexis.indexing.qdrant_client import LexisQdrantClient
+from lexis.indexing.bm25_index import LexisBM25Index
+from lexis.ingestion.embedder import BGEM3Embedder
+from lexis.reranking.cross_encoder import BAAICrossEncoder
+from lexis.retrieval.fusion import apply_rrf
+from lexis.retrieval.interfaces import Candidate, Query
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class RetrievalTrace:
+    """Per-stage intermediate results from a single retrieve_with_trace()
+    call, for retrieval error analysis (see evaluation/diagnostics.py).
+    Purely diagnostic -- nothing reads this during normal retrieval."""
+    query: str
+    dense_candidates: List[Candidate]    # Path B raw results, in returned rank order
+    bm25_candidates: List[Candidate]     # Path D raw results, in returned rank order
+    fused_candidates: List[Candidate]    # full RRF-sorted list, BEFORE the top_n_rrf cutoff
+    final_chunks: List[dict]             # identical shape/content to retrieve()'s return value
+    top_n_rrf: int
+    hype_candidates: List[Candidate] = field(default_factory=list)  # Path HyPE raw results;
+                                                                     # empty when hype_enabled=False
+
+class RetrievalEngine:
+    """
+    Week 1-2 Foundation Retriever.
+    Executes Path B (Global Dense) and Path D (BM25, via bm25s -- see docs/ADR.md
+    ADR-003) concurrently, fusing with RRF.
+    """
+    def __init__(self):
+        self.bm25 = LexisBM25Index(index_dir=settings.bm25_index_dir)
+        self.qdrant = LexisQdrantClient()
+        self.embedder = BGEM3Embedder()
+        # R4: only constructed (and only then does the ~600MB+ model actually load) when
+        # explicitly enabled -- a disabled engine pays zero extra cost.
+        self.reranker = BAAICrossEncoder(device=settings.rerank_device) if settings.rerank_enabled else None
+        self.timeout_sec = 2.0  # 2 second max per path
+
+    async def _safe_execute(self, task, path_name: str) -> List[Any]:
+        """Wraps a retrieval task in a timeout to guarantee UI latency targets."""
+        try:
+            return await asyncio.wait_for(task, timeout=self.timeout_sec)
+        except asyncio.TimeoutError:
+            logger.warning(f"Retrieval Path [{path_name}] timed out after {self.timeout_sec}s")
+            return []
+        except Exception as e:
+            logger.error(f"Retrieval Path [{path_name}] failed: {str(e)}")
+            return []
+
+    async def _path_b_global(self, query_emb: List[float], top_k: int) -> List[Candidate]:
+        """Searches Global Dense Embeddings."""
+        results = await self.qdrant.search(settings.qdrant_collection_primary, query_emb, top_k=top_k)
+        candidates = []
+        for r in results:
+            candidates.append(Candidate(
+                chunk_id=r.payload.get("chunk_id", ""),
+                score=r.score,
+                source_path="path_b_global",
+                metadata=r.payload,
+                content=r.payload.get("content", "")
+            ))
+        return candidates
+
+    async def _maybe_rerank(self, query: str, fused: List[Candidate]) -> List[Candidate]:
+        """No-op when rerank is disabled. Otherwise reranks only the top
+        settings.rerank_top_k of the RRF-fused list (a cross-encoder scoring
+        hundreds of candidates per query would be needlessly expensive --
+        the plan calls for reranking "over top-50-100"), then appends
+        whatever's left AFTER that cutoff in its original RRF order so the
+        full candidate pool is preserved -- reranking only reorders,
+        it must never make a candidate that WAS in the fused list
+        disappear from the eventual top_n_rrf cut."""
+        if self.reranker is None or not fused:
+            return fused
+        head, tail = fused[:settings.rerank_top_k], fused[settings.rerank_top_k:]
+        reranked_head = await self.reranker.transform(Query(text=query), head)
+        return reranked_head + tail
+
+    async def _path_hype(self, query_emb: List[float], top_k: int) -> List[Candidate]:
+        """Searches the HyPE hypothetical-question collection (R2). Each hit's payload
+        was denormalized at ingest time (see pipeline.py::_build_hype_points) to carry the
+        ORIGINATING chunk's own chunk_id/content, not the hype collection's own row -- so a
+        hit here becomes a Candidate for the real chunk, exactly like path_b_global/path_d_bm25,
+        and apply_rrf fuses it by that chunk_id like any other path."""
+        results = await self.qdrant.search(settings.qdrant_collection_hype, query_emb, top_k=top_k)
+        candidates = []
+        for r in results:
+            candidates.append(Candidate(
+                chunk_id=r.payload.get("chunk_id", ""),
+                score=r.score,
+                source_path="path_hype",
+                metadata=r.payload,
+                content=r.payload.get("content", "")
+            ))
+        return candidates
+
+    async def _path_d_bm25(self, query_text: str, top_k: int) -> List[Candidate]:
+        """Searches the local bm25s index (see docs/ADR.md ADR-003). bm25s is
+        synchronous/CPU-bound, so it runs in a worker thread to avoid blocking
+        the event loop under concurrent requests."""
+        try:
+            hits = await asyncio.to_thread(self.bm25.search, query_text, top_k)
+            candidates = []
+            for h in hits:
+                candidates.append(Candidate(
+                    chunk_id=h["chunk_id"],
+                    score=h["score"],
+                    source_path="path_d_bm25",
+                    metadata=h["payload"],
+                    content=h["payload"].get("content", "")
+                ))
+            return candidates
+        except Exception as e:
+            logger.error(f"BM25 search failed: {e}")
+            return []
+
+    async def retrieve(self, query: str, top_k_per_path: int = 15, top_n_rrf: int = 15) -> List[dict]:
+        """
+        Executes foundation multi-path retrieval.
+        Returns dict-based chunks matching downstream expectations.
+        """
+        top_k_per_path = top_k_per_path or settings.retrieval_top_k_per_path
+        
+        # Embed Query
+        query_emb = self.embedder.embed_text(query).tolist()
+        
+        # Concurrently execute paths
+        task_b = self._safe_execute(self._path_b_global(query_emb, top_k_per_path), "Path B (Global)")
+        task_d = self._safe_execute(self._path_d_bm25(query, top_k_per_path), "Path D (BM25)")
+        tasks = [task_b, task_d]
+        if settings.hype_enabled:
+            tasks.append(self._safe_execute(self._path_hype(query_emb, top_k_per_path), "Path HyPE"))
+
+        results = await asyncio.gather(*tasks)
+        res_b, res_d = results[0], results[1]
+        res_hype = results[2] if settings.hype_enabled else []
+
+        # Fuse with RRF
+        candidate_lists = []
+        if res_b: candidate_lists.append(res_b)
+        if res_d: candidate_lists.append(res_d)
+        if res_hype: candidate_lists.append(res_hype)
+
+        fused = apply_rrf(candidate_lists, k=settings.rrf_k)
+        ranked = await self._maybe_rerank(query, fused)
+
+        # Format for downstream
+        final_chunks = []
+        for c in ranked[:top_n_rrf]:
+            final_chunks.append({
+                "id": c.chunk_id,
+                "score": c.score,
+                "rrf_score": c.score,
+                "source_path": c.source_path,
+                "payload": c.metadata,
+                "text": c.content
+            })
+
+        return final_chunks
+
+    async def retrieve_with_trace(self, query: str, top_k_per_path: int = 15, top_n_rrf: int = 15) -> RetrievalTrace:
+        """
+        Diagnostic variant of retrieve() for retrieval error analysis. Calls
+        the exact same per-path methods and the exact same apply_rrf fusion,
+        with the same parameters, as retrieve() -- it does not change
+        retrieval behavior or ordering, only exposes the intermediate
+        per-stage results retrieve() computes internally but discards.
+
+        Deliberately does NOT share a code path with retrieve() (some
+        duplication below), so that retrieve()'s existing, already-verified
+        baseline behavior is not touched by adding this method. See
+        tests/unit/test_hybrid_retriever_trace.py for confirmation that both
+        methods produce identical final_chunks for the same inputs.
+        """
+        top_k_per_path = top_k_per_path or settings.retrieval_top_k_per_path
+
+        query_emb = self.embedder.embed_text(query).tolist()
+
+        task_b = self._safe_execute(self._path_b_global(query_emb, top_k_per_path), "Path B (Global)")
+        task_d = self._safe_execute(self._path_d_bm25(query, top_k_per_path), "Path D (BM25)")
+        tasks = [task_b, task_d]
+        if settings.hype_enabled:
+            tasks.append(self._safe_execute(self._path_hype(query_emb, top_k_per_path), "Path HyPE"))
+
+        results = await asyncio.gather(*tasks)
+        res_b, res_d = results[0], results[1]
+        res_hype = results[2] if settings.hype_enabled else []
+
+        candidate_lists = []
+        if res_b: candidate_lists.append(res_b)
+        if res_d: candidate_lists.append(res_d)
+        if res_hype: candidate_lists.append(res_hype)
+
+        fused = apply_rrf(candidate_lists, k=settings.rrf_k)
+        ranked = await self._maybe_rerank(query, fused)
+
+        final_chunks = []
+        for c in ranked[:top_n_rrf]:
+            final_chunks.append({
+                "id": c.chunk_id,
+                "score": c.score,
+                "rrf_score": c.score,
+                "source_path": c.source_path,
+                "payload": c.metadata,
+                "text": c.content
+            })
+
+        return RetrievalTrace(
+            query=query,
+            dense_candidates=res_b,
+            bm25_candidates=res_d,
+            fused_candidates=fused,
+            final_chunks=final_chunks,
+            top_n_rrf=top_n_rrf,
+            hype_candidates=res_hype,
+        )

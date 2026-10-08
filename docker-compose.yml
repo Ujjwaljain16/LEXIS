@@ -10,17 +10,9 @@ services:
       - qdrant_data:/qdrant/storage
     restart: unless-stopped
 
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m  # Capped at 512MB to save your RAM
-    ports:
-      - "9200:9200"
-    volumes:
-      - es_data:/usr/share/elasticsearch/data
-    restart: unless-stopped
+  # Elasticsearch removed (ADR-003): Path D keyword search now uses the
+  # in-process bm25s index (src/lexis/indexing/bm25_index.py) instead of a
+  # server. No service needed for it -- see docs/ADR.md.
 
   redis:
     image: redis:alpine
@@ -32,5 +24,4 @@ services:
 
 volumes:
   qdrant_data:
-  es_data:
   redis_data:
