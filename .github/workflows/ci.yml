@@ -27,11 +27,13 @@ jobs:
       - name: Install package
         run: pip install -e ".[dev]"
 
-      - name: Unit tests
-        run: python -m pytest tests/unit -q
+      # One command, same as a user runs from a clean clone: unit tests, zero-hardcoding ratchet,
+      # recomputation of the frozen headline numbers, and the results figure.
+      - name: make repro
+        run: make repro
 
-      - name: Zero-hardcoding ratchet
-        run: python -m lexis.quality.hardcode_lint
+      - name: Compliance register is up to date
+        run: python scripts/render_compliance.py --check
 
   docker:
     # Proves the serving image builds from a clean clone (nothing is pushed or run).

@@ -76,3 +76,15 @@ def test_build_provenance_is_json_serializable_and_secret_free(tmp_path):
     assert "SECRET123" not in text and '"T"' not in text
     assert prov["data_missing"] == [str(tmp_path / "missing.json")]
     assert str(data) in prov["data_sha256"] and prov["config_hash"]
+
+
+def test_token_count_settings_are_not_redacted_but_token_secrets_are():
+    from lexis.evaluation.provenance import REDACTED, config_hash, redact_secrets
+    cfg = {"chunk_target_tokens": 500, "max_tokens": 750, "access_token": "abc", "auth-token": "x",
+           "accessToken": "y", "token": "z", "api_key": "k", "qdrant_api_key": "k2"}
+    out = redact_secrets(cfg)
+    assert out["chunk_target_tokens"] == 500 and out["max_tokens"] == 750
+    for secret_key in ("access_token", "auth-token", "accessToken", "token", "api_key", "qdrant_api_key"):
+        assert out[secret_key] == REDACTED
+    # Runs that differ only in chunk size must no longer share a config hash.
+    assert config_hash({"chunk_target_tokens": 500}) != config_hash({"chunk_target_tokens": 400})

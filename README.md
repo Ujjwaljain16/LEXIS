@@ -70,6 +70,27 @@ carry wide intervals. Only the test-split numbers above are headline results.
 A gain is only claimed when the paired bootstrap CI excludes zero **and** the permutation test passes after Holm
 correction (`lexis.evaluation.stats.claim_supported`). Several rungs above do not clear that bar yet, and the table says so.
 
+## Jurisdictions (packs are data, not code)
+
+Adding a jurisdiction is a YAML file: citation grammars (validated against their own positive/negative examples), chunking
+policy, trusted sources, prompts, model choices (from the licence-aware registry) and compliance obligations. A unit test
+creates a brand-new Singapore pack from nothing but YAML and uses it with no code changes. Licences and dataset
+restrictions are generated into [`docs/COMPLIANCE.md`](docs/COMPLIANCE.md).
+
+| Pack | Citation grammars | Compliance recorded | Doc-type patterns | Retrieval **evaluated** |
+|---|---|---|---|---|
+| `us_contracts` | yes | yes | yes | **yes** (CUAD, above) |
+| `india` | yes | yes (NC datasets flagged eval-only) | not built (classifies as `unknown`) | no — configuration only |
+| `uk_eu_statutes` | yes | yes | not built (classifies as `unknown`) | no — configuration only |
+
+## Serving metrics
+
+| | Status |
+|---|---|
+| Time to first token / total latency (P50/P95) | **not measured** — `loadtest/locustfile.py` is ready; needs a deployed target |
+| Cost per query | **not measured** |
+| Answer quality (citation precision, abstention accuracy, faithfulness) | **not measured** — needs LLM quota beyond the free tier |
+
 ## How the evaluation is kept honest
 
 - **Group-disjoint, hash-based dev/test split** frozen in `evaluation/splits/cuad_split_v1.json` (dev 346 / test 164
@@ -82,10 +103,10 @@ correction (`lexis.evaluation.stats.claim_supported`). Several rungs above do no
   "settle pass" is part of the protocol); GPU vs CPU embeddings shift results by a measurable, documented amount; a
   guarded retry stops silent dense-path timeouts from corrupting a run.
 - **Zero-hardcoding ratchet:** an AST-based lint (`python -m lexis.quality.hardcode_lint`) blocks new hardcoded model
-  names, URLs, tunable numbers and classification tables; the violation count (currently 115) may only go down, and the
+  names, URLs, tunable numbers and classification tables; the violation count (currently 111) may only go down, and the
   baseline is enforced by a unit test and CI. Jurisdiction-specific vocabulary lives in YAML packs (`config/packs/`), model choices in a licence-aware
   registry (`config/models.yaml`).
-- **623 unit tests**, including a test that audits every import against declared dependencies (it exists because a fresh
+- **680 unit tests**, including a test that audits every import against declared dependencies (it exists because a fresh
   Colab install exposed five undeclared ones).
 
 ## Architecture
@@ -144,11 +165,14 @@ paths are confined to `INGEST_ROOT_DIR`. A `Dockerfile` is provided for a CPU co
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest tests/unit -q                 # 671 tests
-python -m lexis.quality.hardcode_lint          # zero-hardcoding ratchet
-python scripts/make_results_report.py          # figure + per-category stats from the frozen result
-python -m lexis.evaluation.run_gate_check --help
+make repro        # unit tests + ratchet lint + recompute the frozen headline from per-case results + figure
 ```
+
+`make repro` needs no models and no network. Its `verify-frozen` step (`python -m lexis.evaluation.verify_frozen`)
+recomputes Recall@30/MRR and their bootstrap CIs from the committed per-question file, checks the run used exactly the
+split manifest's test contracts (disjoint from dev, manifest hash matches), and checks the README quotes the same
+numbers. CI runs the same command. Evaluation card: [`docs/EVAL_CARD.md`](docs/EVAL_CARD.md); write-up draft:
+[`docs/BLOG_what_moved_retrieval.md`](docs/BLOG_what_moved_retrieval.md).
 
 Re-running the benchmark itself needs Qdrant, Postgres and a GPU for reasonable speed — it is packaged as a Colab
 notebook pinned to an exact commit: `notebooks/cuad_doc_scoped_test_baseline.ipynb` (Stage A sanity check, Stage B held-out
