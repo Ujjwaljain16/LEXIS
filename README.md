@@ -100,17 +100,44 @@ flowchart LR
     F -. optional .-> X[Cross-encoder rerank]
     F --> O[Top-k chunks]
     X -.-> O
+    O --> G[Numbered sources -> LLM<br/>cites as [n]]
+    G --> V[Citation validation<br/>hallucinated [n] stripped]
+    V --> A[Answer + exact cited passages]
+    G -. declines .-> N[Abstain: not in the context]
+    V -. optional .-> J[Per-claim NLI check]
 ```
 
-Key design choices: hybrid dense+lexical retrieval fused with parameter-free RRF; BM25 over a local index (no search
+Key design choices: answers are generated from numbered sources and every `[n]` is validated against the context the
+model was actually shown — a citation to a source that was not provided is removed, and an answer the sources do not
+support abstains instead of guessing. Hybrid dense+lexical retrieval fused with parameter-free RRF; BM25 over a local index (no search
 cluster to operate); cloud vector store with payload filtering on `doc_id` for scoping; every experimental component
 behind a flag that defaults off so frozen baselines cannot change by accident.
+
+## Run it
+
+```bash
+pip install -e ".[dev]"
+cp .env.example .env            # QDRANT_URL, QDRANT_API_KEY, GEMINI_API_KEY, LEXIS_API_KEYS="mykey:me"
+python scripts/setup_collections.py                       # idempotent
+python scripts/ingest_directory.py examples/              # prints a doc_id per file
+make serve                                                # http://localhost:8000  (UI)  /docs (OpenAPI)
+```
+
+```bash
+curl -N -X POST localhost:8000/v2/query/fast -H "X-API-Key: mykey" -H "Content-Type: application/json"   -d '{"query": "What is the governing law?", "document_ids": ["doc-..."]}'
+```
+
+`/v2/query/fast` streams Server-Sent Events: `status`, `token`, then the authoritative `answer` (citations validated),
+`citations` (only the passages actually cited, with doc id / page / chunk index), optional `verification`, and
+`completed`; or `abstained` / `failed`. Passing `document_ids` uses document-scoped retrieval (the measured lever).
+Auth is fail-closed (`LEXIS_API_KEYS`; `AUTH_DISABLED=true` for local use only), rate limits are per tenant, and ingest
+paths are confined to `INGEST_ROOT_DIR`. A `Dockerfile` is provided for a CPU container (built in CI; not yet deployed).
 
 ## Reproduce
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest tests/unit -q                 # 623 tests
+python -m pytest tests/unit -q                 # 671 tests
 python -m lexis.quality.hardcode_lint          # zero-hardcoding ratchet
 python scripts/make_results_report.py          # figure + per-category stats from the frozen result
 python -m lexis.evaluation.run_gate_check --help
@@ -128,8 +155,15 @@ run, Stage C freeze). Design decisions are recorded in `docs/ADR.md`.
 - **Faithfulness checking:** a real NLI entailment checker (DeBERTa-v3, label order read from the model config) replaced
   a stub that always returned `True`. Its threshold is **uncalibrated** — a hand-labelled legal claim set is still needed
   before quoting any accuracy.
-- **Not yet production-validated:** the API/serving layer, deep-mode agent loop, frontend, auth and rate limiting have not
-  been load-tested or deployed; do not read the retrieval results above as a statement about end-to-end serving.
+- **Answer path:** the cited-answer path (grounded `[n]` citations, abstention, auth, rate limiting, UI) is built and
+  covered by unit and HTTP-level tests with the retriever and LLM faked. It has **not** been measured end to end:
+  there are no answer-quality numbers (citation precision, abstention accuracy, faithfulness), because that needs
+  LLM calls beyond the free-tier quota used here. The retrieval numbers above are the measured ones.
+- **Not load-tested or deployed:** no latency/throughput figures and no live demo yet. Tenancy is **rate-limit scoping
+  only** — documents are not isolated per tenant. The deep-mode worker still uses placeholder processors and is
+  experimental. The PDF-overlay frontend components in the original plan were dropped in favour of the single-page UI.
+- **Unmeasured components:** HyPE (needs a paid LLM quota), sentence-window expansion and CRAG web fallback (removed
+  from the fast path: unmeasured, and CRAG's trigger threshold could never fire on RRF-scale scores).
 - **Front-matter facts** (title, date, parties) are weak (see above).
 - **Scope of claims:** English-language US commercial contracts; one benchmark (CUAD); the document-scoped protocol assumes
   the user supplies the document.

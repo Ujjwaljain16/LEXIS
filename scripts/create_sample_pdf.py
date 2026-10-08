@@ -19,4 +19,4 @@ This Non-Disclosure Agreement (the "Agreement") is entered into this 1st day of 
 5. Miscellaneous. This Agreement shall bind and inure to the benefit of the parties hereto and their successors and assigns. This Agreement shall be governed by the laws of the State of California, without reference to conflict of laws principles.
 """)
 
-pdf.output("sample_contract.pdf")
+pdf.output("examples/sample_contract.pdf")
