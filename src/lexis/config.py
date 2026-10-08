@@ -75,6 +75,11 @@ class Settings(BaseSettings):
     # off a GPU that is already mostly full (e.g. a shared/partly-occupied Colab T4).
     rerank_device: Optional[str] = None
 
+    # R7: document-preamble prior for document-scoped retrieval (retrieval/preamble.py). 0 = off. An
+    # ablation flag: the number of opening chunks per document added as an extra RRF list.
+    preamble_prior_chunks: int = 0
+    preamble_scroll_batch: int = 256
+
     # NLI/faithfulness checking (plan section 5, "Real NLI"). 0.5 ("more likely entailed than
     # not") is a deliberately conservative starting point, not a measured value -- the plan
     # calls for hand-labeling ~100 legal claims and reporting measured accuracy before treating
