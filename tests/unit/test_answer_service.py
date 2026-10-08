@@ -73,7 +73,8 @@ async def test_happy_path_streams_validates_and_cites():
     events = await collect(AnswerService(FakeRetriever(CHUNKS), gen))
 
     # The first ~20 chars are held back (abstention-marker check), so the first two tokens arrive merged.
-    assert types(events) == ["status", "status", "token", "token", "answer", "citations", "completed"]
+    assert types(events) == ["status", "context", "status", "token", "token", "answer", "citations", "completed"]
+    assert by_type(events, "context")[0].data["chunk_ids"] == ["c1", "c2"]
     answer = by_type(events, "answer")[0].data
     assert answer["text"] == "The period is five years [1]. Costs are annual [2] and secret."
     assert answer["invalid_citation_indices"] == [9]
@@ -205,6 +206,7 @@ def test_http_stream_reaches_llm_with_configured_model_and_key_and_never_leaks_i
 
     assert captured["model"] == settings.gemini_model_synthesis
     assert captured["api_key"] == SENTINEL_KEY and captured["stream"] is True
+    assert captured["api_base"] == settings.llm_api_base   # None by default; a gateway URL when configured
     assert "[1] The report covers a five years period." in captured["messages"][1]["content"]
     assert retriever.calls == [("How long?", ["doc-a"])]
 
@@ -238,3 +240,19 @@ def test_ui_is_served_and_never_renders_model_output_as_html(http):
     assert r.status_code == 200 and "<title>LEXIS</title>" in r.text
     # Model output and retrieved passages must only ever be inserted as text, never parsed as HTML.
     assert "innerHTML" not in r.text and "insertAdjacentHTML" not in r.text and "document.write" not in r.text
+
+
+@pytest.mark.asyncio
+async def test_gateway_base_url_reaches_the_llm_call(monkeypatch):
+    monkeypatch.setattr(settings, "llm_api_base", "https://gateway.example/v1")
+    monkeypatch.setattr(settings, "gemini_model_synthesis", "openai/some-model")
+    captured = {}
+
+    async def fake_acompletion(**kwargs):
+        captured.update(kwargs)
+        return FakeLLMStream(["ok"])
+
+    monkeypatch.setattr(synthesizer_module, "acompletion", fake_acompletion)
+    tokens = [t async for t in LexisSynthesizer().stream_grounded("q", [])]
+    assert tokens == ["ok"]
+    assert captured["api_base"] == "https://gateway.example/v1" and captured["model"] == "openai/some-model"

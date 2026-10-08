@@ -8,6 +8,10 @@ class Settings(BaseSettings):
     gemini_model_synthesis: str = "gemini/gemini-2.5-flash"
     gemini_model_feature: str = "gemini/gemini-2.5-flash"
     gemini_model_vision: str = "gemini/gemini-2.5-pro"
+    # Optional OpenAI-compatible gateway (OpenRouter-style). With it, set GEMINI_MODEL_SYNTHESIS to the
+    # gateway's model id (e.g. "openai/<model>") and GEMINI_API_KEY to that gateway's key; the field names
+    # predate multi-provider support. None = LiteLLM's default routing for the model name.
+    llm_api_base: Optional[str] = None
 
     # Embeddings
     embedding_model: str = "BAAI/bge-m3"
@@ -75,6 +79,11 @@ class Settings(BaseSettings):
     # off a GPU that is already mostly full (e.g. a shared/partly-occupied Colab T4).
     rerank_device: Optional[str] = None
 
+    # R7: document-preamble prior for document-scoped retrieval (retrieval/preamble.py). 0 = off. An
+    # ablation flag: the number of opening chunks per document added as an extra RRF list.
+    preamble_prior_chunks: int = 0
+    preamble_scroll_batch: int = 256
+
     # NLI/faithfulness checking (plan section 5, "Real NLI"). 0.5 ("more likely entailed than
     # not") is a deliberately conservative starting point, not a measured value -- the plan
     # calls for hand-labeling ~100 legal claims and reporting measured accuracy before treating
@@ -108,6 +117,10 @@ class Settings(BaseSettings):
     # numpy major versions.
     verify_mean_tolerance: float = 1e-9
     verify_ci_tolerance: float = 5e-4
+
+    # Answer-quality evaluation (evaluation/run_answer_eval.py): LLM calls per minute, kept under the
+    # provider's limit. Conservative default; raise it for a paid key.
+    answer_eval_requests_per_minute: int = 10
 
     # Chunking
     semantic_chunking_threshold: float = 0.4
