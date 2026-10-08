@@ -21,6 +21,13 @@ Frozen artifact: [`evaluation/reports/cuad_doc_scoped_test.json`](evaluation/rep
 task context (a user selecting a document), *never* chosen by the system. The whole-corpus ("pooled") protocol is kept as
 a separate, frozen continuity baseline. See the next section for why they are not mixed.
 
+**How much of the evidence reaches the answer model.** Hit@k = share of questions with at least one gold chunk in the
+top k (same frozen run, 95% bootstrap CI): Hit@1 **0.404** [0.382, 0.426], Hit@5 **0.665** [0.644, 0.685],
+Hit@10 **0.763** [0.744, 0.782], Hit@30 **0.910** [0.898, 0.923]. The answer path feeds the generator 5 chunks by default
+(`ANSWER_CONTEXT_CHUNKS`), so roughly a third of questions never have their evidence in the prompt and should abstain
+rather than answer. This is descriptive: the default of 5 was set before these numbers were computed and has **not**
+been tuned on the test split — any change to it must be justified on dev data.
+
 ### Where the quality comes from (and where it doesn't)
 
 ![Per-category retrieval quality](figures/cuad_test_per_category.png)
