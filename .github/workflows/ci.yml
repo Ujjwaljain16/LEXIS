@@ -41,3 +41,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build image
         run: docker build -t lexis-api .
+      - name: Smoke test (imports the full stack and serves /v2/health and the UI)
+        run: |
+          docker run -d --name lexis -p 7860:7860 -e AUTH_DISABLED=true lexis-api
+          for i in $(seq 1 30); do curl -sf localhost:7860/v2/health && break || sleep 2; done
+          curl -sf localhost:7860/v2/health
+          curl -sf localhost:7860/ | grep -q "<title>LEXIS</title>"
+          docker logs lexis | tail -20

@@ -9,7 +9,8 @@ WORKDIR /app
 COPY pyproject.toml ./
 COPY src ./src
 COPY config ./config
-RUN pip install --extra-index-url https://download.pytorch.org/whl/cpu torch \
+# torch and torchvision must come from the same (CPU) index, or `import transformers` fails at runtime.
+RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu \
     && pip install .
 
 # Spaces runs as an unprivileged user on port 7860; override PORT elsewhere.
