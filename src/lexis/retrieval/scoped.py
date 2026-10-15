@@ -27,6 +27,7 @@ from lexis.config import settings
 from lexis.retrieval.fusion import apply_rrf
 from lexis.retrieval.hybrid_retriever import RetrievalEngine, RetrievalTrace
 from lexis.retrieval.interfaces import Candidate, Query
+from lexis.retrieval.preamble import PreambleIndex
 
 
 async def retrieve_scoped(engine: RetrievalEngine, query: str, doc_ids: Sequence[str],
@@ -74,7 +75,15 @@ async def retrieve_scoped(engine: RetrievalEngine, query: str, doc_ids: Sequence
             for r in hype_response.points
         ]
 
-    lists = [lst for lst in (dense, bm25, hype) if lst]
+    preamble: list = []
+    if settings.preamble_prior_chunks > 0:
+        index = getattr(engine, "_preamble_index", None)
+        if index is None:
+            index = PreambleIndex(engine.qdrant.client, settings.qdrant_collection_primary)
+            engine._preamble_index = index
+        preamble = await index.for_scope(scope, settings.preamble_prior_chunks)
+
+    lists = [lst for lst in (dense, bm25, hype, preamble) if lst]
     fused = apply_rrf(lists, k=settings.rrf_k)
 
     # R4: same top-rerank_top_k-then-append-the-rest policy as
@@ -96,4 +105,4 @@ async def retrieve_scoped(engine: RetrievalEngine, query: str, doc_ids: Sequence
     ]
     return RetrievalTrace(query=query, dense_candidates=dense, bm25_candidates=bm25,
                           fused_candidates=fused, final_chunks=final_chunks, top_n_rrf=top_n_rrf,
-                          hype_candidates=hype)
+                          hype_candidates=hype, preamble_candidates=preamble)

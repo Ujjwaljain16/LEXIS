@@ -27,6 +27,8 @@ class RetrievalTrace:
     top_n_rrf: int
     hype_candidates: List[Candidate] = field(default_factory=list)  # Path HyPE raw results;
                                                                      # empty when hype_enabled=False
+    preamble_candidates: List[Candidate] = field(default_factory=list)  # R7 prior (scoped only);
+                                                                         # empty when preamble_prior_chunks=0
 
 class RetrievalEngine:
     """
